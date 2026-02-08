@@ -373,7 +373,7 @@ export default function DashboardFinancesModern() {
                 <span className="text-sm font-medium">Calculadora Jubilació</span>
              </div>
              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
-               Jubileta Dashboard
+               El Cotxe del Papa Dashboard
              </h1>
           </div>
           
