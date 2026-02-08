@@ -17,6 +17,7 @@ import {
   Fuel,
   PiggyBank,
   Target,
+  Download,
 } from 'lucide-react';
 
 // --- UI COMPONENTS ---
@@ -380,39 +381,82 @@ export default function DashboardFinancesModern() {
       10: projectionData[10][optionKey]
   });
 
+  const handleDownloadPdf = () => {
+    window.print();
+  };
+
+  const scenarioPrintData = [
+    {
+      name: opt1.name,
+      label: "Actual",
+      theme: "from-blue-500 to-blue-600",
+      status: getStatusColor(finalState.opt1),
+      scenario: scenario1,
+      netMonthly: monthlyCashFlow - scenario1.monthlyAverage,
+      finalCapital: finalState.opt1,
+      projections: getProjectionsForOption("opt1"),
+    },
+    {
+      name: opt2.name,
+      label: "Econòmic",
+      theme: "from-emerald-500 to-emerald-600",
+      status: getStatusColor(finalState.opt2),
+      scenario: scenario2,
+      netMonthly: monthlyCashFlow - scenario2.monthlyAverage,
+      finalCapital: finalState.opt2,
+      projections: getProjectionsForOption("opt2"),
+    },
+    {
+      name: opt3.name,
+      label: "Premium",
+      theme: "from-purple-500 to-purple-600",
+      status: getStatusColor(finalState.opt3),
+      scenario: scenario3,
+      netMonthly: monthlyCashFlow - scenario3.monthlyAverage,
+      finalCapital: finalState.opt3,
+      projections: getProjectionsForOption("opt3"),
+    },
+  ];
+
+  const statusLabel = (status) => {
+    if (status === "green") return "Sostenible";
+    if (status === "orange") return "Atenció";
+    return "Risc Alt";
+  };
+
   return (
     <div className="bg-slate-50 min-h-screen font-sans text-slate-600 pb-20 selection:bg-blue-100 selection:text-blue-900">
-      
-      {/* HEADER */}
-      <div className="bg-slate-900 text-white pt-8 pb-16 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-             <div className="flex items-center gap-2 mb-2 opacity-80">
-                <Badge color="blue">v2.0 Beta</Badge>
-                <span className="text-sm font-medium">Calculadora Jubilació</span>
-             </div>
-             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
-               El Cotxe del Papa Dashboard
-             </h1>
-          </div>
-          
-          <div className="flex gap-4 text-sm text-slate-400">
-            <div className="text-right">
-              <div className="font-bold text-white text-lg">{basicFinance.savings.toLocaleString()} €</div>
-              <div>Patrimoni Inicial</div>
+      <div className="no-print">
+        {/* HEADER */}
+        <div className="bg-slate-900 text-white pt-8 pb-16 px-4">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+               <div className="flex items-center gap-2 mb-2 opacity-80">
+                  <Badge color="blue">v2.0 Beta</Badge>
+                  <span className="text-sm font-medium">Calculadora Jubilació</span>
+               </div>
+               <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
+                 El Cotxe del Papa Dashboard
+               </h1>
             </div>
-            <div className="h-10 w-px bg-slate-700"></div>
-            <div className="text-right">
-              <div className={`font-bold text-lg ${monthlyCashFlow > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {monthlyCashFlow > 0 ? '+' : ''}{monthlyCashFlow} €
+            
+            <div className="flex gap-4 text-sm text-slate-400">
+              <div className="text-right">
+                <div className="font-bold text-white text-lg">{basicFinance.savings.toLocaleString()} €</div>
+                <div>Patrimoni Inicial</div>
               </div>
-              <div>Marge Mensual</div>
+              <div className="h-10 w-px bg-slate-700"></div>
+              <div className="text-right">
+                <div className={`font-bold text-lg ${monthlyCashFlow > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {monthlyCashFlow > 0 ? '+' : ''}{monthlyCashFlow} €
+                </div>
+                <div>Marge Mensual</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <main className="max-w-7xl mx-auto px-4 -mt-8 space-y-8">
+        <main className="max-w-7xl mx-auto px-4 -mt-8 space-y-8">
         
         {/* SECTION A: BASE FINANCES (Top Cards) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -690,7 +734,138 @@ export default function DashboardFinancesModern() {
           </div>
         </div>
 
-      </main>
+        {/* SECTION F: PDF DOWNLOAD */}
+        <div>
+          <Card className="border border-slate-200 bg-gradient-to-r from-white via-slate-50 to-white">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 mb-2">
+                  <Download className="w-4 h-4" />
+                  Informe PDF
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">
+                  Descarrega un resum visual dels teus escenaris
+                </h3>
+                <p className="text-sm text-slate-500 max-w-2xl">
+                  Genera un PDF elegant amb totes les dades clau, comparatives i projeccions
+                  per revisar o compartir la decisió amb tranquil·litat.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              >
+                <Download className="w-4 h-4" />
+                Descarregar PDF
+              </button>
+            </div>
+          </Card>
+        </div>
+
+        </main>
+      </div>
+
+      <div className="print-only">
+        <div className="print-page">
+          <header className="print-hero">
+            <div>
+              <p className="text-sm uppercase tracking-[0.2em] text-slate-200">Informe</p>
+              <h1 className="text-3xl font-bold text-white">El Cotxe del Papa</h1>
+              <p className="text-sm text-slate-200">Resum elegant dels teus escenaris a 10 anys.</p>
+            </div>
+            <div className="text-right text-slate-200 text-sm">
+              <div>Data: {new Date().toLocaleDateString('ca-ES')}</div>
+              <div>Versió: v2.0</div>
+            </div>
+          </header>
+
+          <section className="print-grid">
+            <div className="print-card">
+              <h2>Finances personals</h2>
+              <p>Estalvis actuals: <strong>{basicFinance.savings.toLocaleString('ca-ES')} €</strong></p>
+              <p>Ingressos nets: <strong>{basicFinance.pension.toLocaleString('ca-ES')} € / mes</strong></p>
+              <p>Despeses fixes: <strong>{basicFinance.expenses.toLocaleString('ca-ES')} € / mes</strong></p>
+              <p>Marge mensual: <strong>{monthlyCashFlow.toLocaleString('ca-ES')} €</strong></p>
+            </div>
+            <div className="print-card">
+              <h2>Paràmetres del cotxe</h2>
+              <p>Kilòmetres anuals: <strong>{carCommon.kmPerYear.toLocaleString('ca-ES')} km</strong></p>
+              <p>Preu benzina: <strong>{carCommon.fuelCost.toLocaleString('ca-ES')} € / L</strong></p>
+              <p>Consum opció 1: <strong>{opt1.consumption.toLocaleString('ca-ES')} L/100</strong></p>
+              <p>Consum opció 2: <strong>{opt2.consumption.toLocaleString('ca-ES')} L/100</strong></p>
+            </div>
+            <div className="print-card">
+              <h2>Inversió i inflació</h2>
+              <p>Percentatge invertit: <strong>{investment.percentToInvest}%</strong></p>
+              <p>Rendiment anual: <strong>{investment.returnRate}%</strong></p>
+              <p>Inflació estimada: <strong>{investment.inflation}%</strong></p>
+              <p>Rendiment real: <strong>{(investment.returnRate - investment.inflation).toFixed(1)}%</strong></p>
+            </div>
+          </section>
+
+          <section className="print-section">
+            <h2>Comparativa d'escenaris</h2>
+            <div className="print-scenarios">
+              {scenarioPrintData.map((scenario) => (
+                <article key={scenario.label} className="print-scenario">
+                  <div className={`print-scenario__header bg-gradient-to-r ${scenario.theme}`}>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-white/70">{scenario.label}</p>
+                      <h3 className="text-lg font-semibold text-white">{scenario.name}</h3>
+                    </div>
+                    <span className="print-status">{statusLabel(scenario.status)}</span>
+                  </div>
+                  <div className="print-scenario__body">
+                    <div>
+                      <p className="label">Cost mensual</p>
+                      <p className="value">{Math.round(scenario.scenario.monthlyAverage).toLocaleString('ca-ES')} €</p>
+                    </div>
+                    <div>
+                      <p className="label">Balanç net</p>
+                      <p className="value">{Math.round(scenario.netMonthly).toLocaleString('ca-ES')} €</p>
+                    </div>
+                    <div>
+                      <p className="label">Cost 10 anys</p>
+                      <p className="value">{Math.round(scenario.scenario.totalCost10Years).toLocaleString('ca-ES')} €</p>
+                    </div>
+                  </div>
+                  <div className="print-scenario__footer">
+                    <div>
+                      <p className="label">Patrimoni any 1</p>
+                      <p className="value">{scenario.projections[1].toLocaleString('ca-ES')} €</p>
+                    </div>
+                    <div>
+                      <p className="label">Patrimoni any 5</p>
+                      <p className="value">{scenario.projections[5].toLocaleString('ca-ES')} €</p>
+                    </div>
+                    <div>
+                      <p className="label">Patrimoni any 10</p>
+                      <p className="value">{scenario.projections[10].toLocaleString('ca-ES')} €</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="print-highlight">
+            <div>
+              <h2>Recordatori final</h2>
+              <p>
+                Aquest informe resumeix l'impacte de cada opció sobre el teu patrimoni
+                i et dona una visió clara per prendre la millor decisió.
+              </p>
+            </div>
+            <div className="print-kpi">
+              <p className="label">Patrimoni inicial</p>
+              <p className="value">{basicFinance.savings.toLocaleString('ca-ES')} €</p>
+              <p className="label">Marge mensual</p>
+              <p className="value">{monthlyCashFlow.toLocaleString('ca-ES')} €</p>
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
