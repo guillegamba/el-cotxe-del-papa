@@ -57,9 +57,9 @@ const SectionHeader = ({ title, icon: Icon, subtitle }) => (
   </div>
 );
 
-const ModernInput = ({ label, value, onChange, type = "number", suffix = "", step = "1", min = "0", icon: Icon }) => (
+const ModernInput = ({ label, value, onChange, type = "number", suffix = "", step = "1", min = "0", icon: Icon, hint = "", inputMode }) => (
   <div className="group relative">
-    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
+    <label className="block text-[11px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
       {label}
     </label>
     <div className="relative flex items-center">
@@ -72,21 +72,26 @@ const ModernInput = ({ label, value, onChange, type = "number", suffix = "", ste
         type={type}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        onWheel={(e) => e.currentTarget.blur()}
         step={step}
         min={min}
+        inputMode={inputMode || (type === "number" ? "decimal" : undefined)}
+        aria-label={label}
         className={`
-          block w-full rounded-xl border-slate-200 bg-slate-50 
-          py-2.5 text-slate-700 font-medium shadow-sm transition-all
+          block w-full rounded-2xl border border-slate-200 bg-slate-50 
+          py-3 text-base sm:text-sm text-slate-700 font-medium shadow-sm transition-all
           focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100
-          ${Icon ? 'pl-9' : 'pl-3'} ${suffix ? 'pr-12' : 'pr-3'}
+          touch-manipulation
+          ${Icon ? 'pl-10' : 'pl-4'} ${suffix ? 'pr-12' : 'pr-4'}
         `}
       />
       {suffix && (
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-          <span className="text-slate-400 text-sm font-medium">{suffix}</span>
+          <span className="text-slate-400 text-xs sm:text-sm font-medium">{suffix}</span>
         </div>
       )}
     </div>
+    {hint && <p className="mt-1 text-[11px] sm:text-xs text-slate-400">{hint}</p>}
   </div>
 );
 
@@ -384,8 +389,8 @@ export default function DashboardFinancesModern() {
     <div className="bg-slate-50 min-h-screen font-sans text-slate-600 pb-20 selection:bg-blue-100 selection:text-blue-900">
       
       {/* HEADER */}
-      <div className="bg-slate-900 text-white pt-8 pb-16 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 text-white pt-8 pb-16 px-4 shadow-lg">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
              <div className="flex items-center gap-2 mb-2 opacity-80">
                 <Badge color="blue">v2.0 Beta</Badge>
@@ -396,13 +401,13 @@ export default function DashboardFinancesModern() {
              </h1>
           </div>
           
-          <div className="flex gap-4 text-sm text-slate-400">
-            <div className="text-right">
+          <div className="flex flex-col sm:flex-row gap-4 text-sm text-slate-300 bg-slate-800/60 rounded-2xl p-4 w-full sm:w-auto">
+            <div className="text-left sm:text-right">
               <div className="font-bold text-white text-lg">{basicFinance.savings.toLocaleString()} €</div>
               <div>Patrimoni Inicial</div>
             </div>
-            <div className="h-10 w-px bg-slate-700"></div>
-            <div className="text-right">
+            <div className="h-px w-full sm:h-10 sm:w-px bg-slate-700"></div>
+            <div className="text-left sm:text-right">
               <div className={`font-bold text-lg ${monthlyCashFlow > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                 {monthlyCashFlow > 0 ? '+' : ''}{monthlyCashFlow} €
               </div>
@@ -412,16 +417,16 @@ export default function DashboardFinancesModern() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 -mt-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 -mt-8 space-y-8 sm:space-y-10">
         
         {/* SECTION A: BASE FINANCES (Top Cards) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2 shadow-lg">
              <SectionHeader title="Finances Personals" icon={Wallet} subtitle="Defineix la teva base econòmica per calcular la viabilitat." />
              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <ModernInput label="Estalvis Actuals" value={basicFinance.savings} onChange={(v) => setBasicFinance({...basicFinance, savings: v})} step="1000" suffix="€" icon={PiggyBank} />
-                <ModernInput label="Ingressos Nets" value={basicFinance.pension} onChange={(v) => setBasicFinance({...basicFinance, pension: v})} suffix="€/mes" icon={Wallet} />
-                <ModernInput label="Despeses Fixes" value={basicFinance.expenses} onChange={(v) => setBasicFinance({...basicFinance, expenses: v})} suffix="€/mes" icon={Target} />
+                <ModernInput label="Estalvis Actuals" value={basicFinance.savings} onChange={(v) => setBasicFinance({...basicFinance, savings: v})} step="1000" suffix="€" icon={PiggyBank} hint="Actualitza el capital disponible." />
+                <ModernInput label="Ingressos Nets" value={basicFinance.pension} onChange={(v) => setBasicFinance({...basicFinance, pension: v})} suffix="€/mes" icon={Wallet} hint="Quant entra cada mes." />
+                <ModernInput label="Despeses Fixes" value={basicFinance.expenses} onChange={(v) => setBasicFinance({...basicFinance, expenses: v})} suffix="€/mes" icon={Target} hint="Despeses essencials mensuals." />
              </div>
           </Card>
 
@@ -450,17 +455,17 @@ export default function DashboardFinancesModern() {
           </h2>
 
           {/* Common Settings Bar */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-wrap items-center gap-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-6">
             <div className="flex items-center gap-2 text-slate-700 font-bold mr-auto">
                <Settings className="w-5 h-5 text-slate-400" />
                <span className="hidden sm:inline">Paràmetres Comuns</span>
             </div>
-            <div className="flex gap-4 flex-1 sm:flex-none">
-              <div className="flex-1 sm:w-40">
-                <ModernInput label="Km / Any" value={carCommon.kmPerYear} onChange={(v) => setCarCommon({...carCommon, kmPerYear: v})} step="1000" suffix="km" />
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <div className="flex-1 sm:w-44">
+                <ModernInput label="Km / Any" value={carCommon.kmPerYear} onChange={(v) => setCarCommon({...carCommon, kmPerYear: v})} step="1000" suffix="km" hint="Introdueix el teu ús anual." />
               </div>
-              <div className="flex-1 sm:w-40">
-                 <ModernInput label="Preu Gasolina" value={carCommon.fuelCost} onChange={(v) => setCarCommon({...carCommon, fuelCost: v})} step="0.1" suffix="€/L" />
+              <div className="flex-1 sm:w-44">
+                 <ModernInput label="Preu Gasolina" value={carCommon.fuelCost} onChange={(v) => setCarCommon({...carCommon, fuelCost: v})} step="0.1" suffix="€/L" hint="Preu mitjà actual." />
               </div>
             </div>
           </div>
@@ -470,11 +475,11 @@ export default function DashboardFinancesModern() {
             {/* OPTION 1: BLUE */}
             <Card className="border-t-4 border-t-blue-500 hover:border-t-[6px] transition-all">
               <div className="mb-6 flex justify-between items-start">
-                 <input type="text" value={opt1.name} onChange={(e) => setOpt1({...opt1, name: e.target.value})} className="font-bold text-lg text-blue-900 w-full bg-transparent border-b border-dashed border-blue-200 focus:outline-none focus:border-blue-500" />
+                 <input type="text" value={opt1.name} onChange={(e) => setOpt1({...opt1, name: e.target.value})} className="font-bold text-base sm:text-lg text-blue-900 w-full bg-white/60 border border-blue-100 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
                  <Badge color="blue">Actual</Badge>
               </div>
               <div className="space-y-4">
-                <ModernInput label="Pagament Final" value={opt1.finalPayment} onChange={(v) => setOpt1({...opt1, finalPayment: v})} suffix="€" />
+                <ModernInput label="Pagament Final" value={opt1.finalPayment} onChange={(v) => setOpt1({...opt1, finalPayment: v})} suffix="€" hint="Cost de compra o valor final." />
                 <div className="grid grid-cols-2 gap-4">
                   <ModernInput label="Consum" value={opt1.consumption} onChange={(v) => setOpt1({...opt1, consumption: v})} suffix="L/100" />
                   <ModernInput label="Despeses/Any" value={opt1.annualMaintenance + opt1.insurance} onChange={(v) => setOpt1({...opt1, annualMaintenance: v, insurance: 0})} suffix="€" />
@@ -495,15 +500,15 @@ export default function DashboardFinancesModern() {
             {/* OPTION 2: EMERALD */}
             <Card className="border-t-4 border-t-emerald-500 hover:border-t-[6px] transition-all">
               <div className="mb-6 flex justify-between items-start">
-                 <input type="text" value={opt2.name} onChange={(e) => setOpt2({...opt2, name: e.target.value})} className="font-bold text-lg text-emerald-900 w-full bg-transparent border-b border-dashed border-emerald-200 focus:outline-none focus:border-emerald-500" />
+                 <input type="text" value={opt2.name} onChange={(e) => setOpt2({...opt2, name: e.target.value})} className="font-bold text-base sm:text-lg text-emerald-900 w-full bg-white/60 border border-emerald-100 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
                  <Badge color="emerald">Econòmic</Badge>
               </div>
               <div className="space-y-4">
-                <ModernInput label="Preu Compra" value={opt2.price} onChange={(v) => setOpt2({...opt2, price: v})} suffix="€" />
+                <ModernInput label="Preu Compra" value={opt2.price} onChange={(v) => setOpt2({...opt2, price: v})} suffix="€" hint="Preu total del vehicle." />
                 
                 <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
                   <div className="flex items-center mb-3">
-                    <input type="checkbox" id="fin2" checked={opt2.isFinanced} onChange={(e) => setOpt2({...opt2, isFinanced: e.target.checked})} className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" />
+                    <input type="checkbox" id="fin2" checked={opt2.isFinanced} onChange={(e) => setOpt2({...opt2, isFinanced: e.target.checked})} className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-2 focus:ring-emerald-500" />
                     <label htmlFor="fin2" className="ml-2 text-sm font-medium text-emerald-800">Finançar Compra</label>
                   </div>
                   {opt2.isFinanced && (
@@ -537,15 +542,15 @@ export default function DashboardFinancesModern() {
             {/* OPTION 3: PURPLE */}
             <Card className="border-t-4 border-t-purple-500 hover:border-t-[6px] transition-all">
               <div className="mb-6 flex justify-between items-start">
-                 <input type="text" value={opt3.name} onChange={(e) => setOpt3({...opt3, name: e.target.value})} className="font-bold text-lg text-purple-900 w-full bg-transparent border-b border-dashed border-purple-200 focus:outline-none focus:border-purple-500" />
+                 <input type="text" value={opt3.name} onChange={(e) => setOpt3({...opt3, name: e.target.value})} className="font-bold text-base sm:text-lg text-purple-900 w-full bg-white/60 border border-purple-100 rounded-xl px-3 py-2 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
                  <Badge color="purple">Premium</Badge>
               </div>
               <div className="space-y-4">
-                <ModernInput label="Preu Compra" value={opt3.price} onChange={(v) => setOpt3({...opt3, price: v})} suffix="€" />
+                <ModernInput label="Preu Compra" value={opt3.price} onChange={(v) => setOpt3({...opt3, price: v})} suffix="€" hint="Preu total del vehicle." />
                 
                 <div className="bg-purple-50/50 p-3 rounded-xl border border-purple-100">
                   <div className="flex items-center mb-3">
-                    <input type="checkbox" id="fin3" checked={opt3.isFinanced} onChange={(e) => setOpt3({...opt3, isFinanced: e.target.checked})} className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500" />
+                    <input type="checkbox" id="fin3" checked={opt3.isFinanced} onChange={(e) => setOpt3({...opt3, isFinanced: e.target.checked})} className="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-2 focus:ring-purple-500" />
                     <label htmlFor="fin3" className="ml-2 text-sm font-medium text-purple-800">Finançar Compra</label>
                   </div>
                   {opt3.isFinanced && (
@@ -598,7 +603,7 @@ export default function DashboardFinancesModern() {
                       type="range" min="0" max="100" step="5"
                       value={investment.percentToInvest}
                       onChange={(e) => setInvestment({...investment, percentToInvest: parseInt(e.target.value)})}
-                      className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                      className="w-full h-2.5 sm:h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500 touch-pan-x"
                    />
                  </div>
                  
