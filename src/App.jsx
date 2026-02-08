@@ -569,8 +569,8 @@ export default function DashboardFinancesModern() {
              <SectionHeader title="Finances Personals" icon={Wallet} subtitle="Defineix la teva base econòmica per calcular la viabilitat." />
              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <ModernInput label="Estalvis Actuals" value={basicFinance.savings} onChange={(v) => setBasicFinance({...basicFinance, savings: v})} step="1000" suffix="€" icon={PiggyBank} hint="Actualitza el capital disponible." />
-                <ModernInput label="Ingressos Nets" value={basicFinance.pension} onChange={(v) => setBasicFinance({...basicFinance, pension: v})} suffix="€/mes" icon={Wallet} hint="Quant entra cada mes." />
-                <ModernInput label="Despeses Fixes" value={basicFinance.expenses} onChange={(v) => setBasicFinance({...basicFinance, expenses: v})} suffix="€/mes" icon={Target} hint="Despeses essencials mensuals." />
+                <ModernInput label="Ingressos Nets" value={basicFinance.pension} onChange={(v) => setBasicFinance({...basicFinance, pension: v})} step="50" suffix="€/mes" icon={Wallet} hint="Quant entra cada mes." />
+                <ModernInput label="Despeses Fixes" value={basicFinance.expenses} onChange={(v) => setBasicFinance({...basicFinance, expenses: v})} step="50" suffix="€/mes" icon={Target} hint="Despeses essencials mensuals." />
              </div>
           </Card>
 
@@ -623,10 +623,10 @@ export default function DashboardFinancesModern() {
                  <Badge color="blue">Actual</Badge>
               </div>
               <div className="space-y-4">
-                <ModernInput label="Pagament Final" value={opt1.finalPayment} onChange={(v) => setOpt1({...opt1, finalPayment: v})} suffix="€" hint="Cost de compra o valor final." />
+                <ModernInput label="Pagament Final" value={opt1.finalPayment} onChange={(v) => setOpt1({...opt1, finalPayment: v})} step="1000" suffix="€" hint="Cost de compra o valor final." />
                 <div className="grid grid-cols-2 gap-4">
                   <ModernInput label="Consum" value={opt1.consumption} onChange={(v) => setOpt1({...opt1, consumption: v})} suffix="L/100" />
-                  <ModernInput label="Despeses/Any" value={opt1.annualMaintenance + opt1.insurance} onChange={(v) => setOpt1({...opt1, annualMaintenance: v, insurance: 0})} suffix="€" />
+                  <ModernInput label="Despeses/Any" value={opt1.annualMaintenance + opt1.insurance} onChange={(v) => setOpt1({...opt1, annualMaintenance: v, insurance: 0})} step="100" suffix="€" />
                 </div>
                 
                 <div className="mt-6 pt-4 border-t border-slate-100">
@@ -667,8 +667,8 @@ export default function DashboardFinancesModern() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <ModernInput label="Consum" value={opt2.consumption} onChange={(v) => setOpt2({...opt2, consumption: v})} suffix="L/100" />
-                  <ModernInput label="Despeses/Any" value={opt2.annualMaintenance + opt2.insurance} onChange={(v) => setOpt2({...opt2, annualMaintenance: v, insurance: 0})} suffix="€" />
+                  <ModernInput label="Consum" value={opt2.consumption} onChange={(v) => setOpt2({...opt2, consumption: v})} step="1000" suffix="L/100" />
+                  <ModernInput label="Despeses/Any" value={opt2.annualMaintenance + opt2.insurance} onChange={(v) => setOpt2({...opt2, annualMaintenance: v, insurance: 0})} step="50" suffix="€" />
                 </div>
 
                  <div className="mt-6 pt-4 border-t border-slate-100">
@@ -709,8 +709,8 @@ export default function DashboardFinancesModern() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <ModernInput label="Consum" value={opt3.consumption} onChange={(v) => setOpt3({...opt3, consumption: v})} suffix="L/100" />
-                  <ModernInput label="Despeses/Any" value={opt3.annualMaintenance + opt3.insurance} onChange={(v) => setOpt3({...opt3, annualMaintenance: v, insurance: 0})} suffix="€" />
+                  <ModernInput label="Consum" value={opt3.consumption} onChange={(v) => setOpt3({...opt3, consumption: v})} step="1000" suffix="L/100" />
+                  <ModernInput label="Despeses/Any" value={opt3.annualMaintenance + opt3.insurance} onChange={(v) => setOpt3({...opt3, annualMaintenance: v, insurance: 0})} step="50" suffix="€" />
                 </div>
 
                  <div className="mt-6 pt-4 border-t border-slate-100">
