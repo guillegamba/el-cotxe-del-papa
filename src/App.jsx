@@ -2,8 +2,21 @@ import React, { useState, useMemo } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Area, AreaChart
 } from 'recharts';
-import { 
-  Wallet, TrendingUp, Car, AlertTriangle, Info, Calculator, Check, X, ChevronRight, Settings, Fuel, PiggyBank, Target
+import {
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  Car,
+  AlertTriangle,
+  Info,
+  Calculator,
+  Check,
+  X,
+  ChevronRight,
+  Settings,
+  Fuel,
+  PiggyBank,
+  Target,
 } from 'lucide-react';
 
 // --- UI COMPONENTS ---
