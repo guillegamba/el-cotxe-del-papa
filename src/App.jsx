@@ -287,6 +287,8 @@ export default function DashboardFinancesModern() {
 
     const series = [];
 
+    const realReturnRate = (investment.returnRate - investment.inflation) / 100;
+
     for (let year = 0; year <= 10; year++) {
        if (year === 0) {
          series.push(investedAmount + liquidAmount);
@@ -305,7 +307,7 @@ export default function DashboardFinancesModern() {
        }
 
        const totalCarOut = carOpsCost + loanCostThisYear;
-       const investmentReturn = investedAmount * (investment.returnRate / 100);
+       const investmentReturn = investedAmount * realReturnRate;
        
        let netFlow = yearCashFlow - totalCarOut;
        liquidAmount += netFlow;
