@@ -525,7 +525,7 @@ export default function DashboardFinancesModern() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
              <div className="flex items-center gap-2 mb-2 opacity-80">
-                <Badge color="blue">v2.0 Beta</Badge>
+                <Badge color="blue">Beta</Badge>
                 <span className="text-sm font-medium">Calculadora Jubilació</span>
              </div>
              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
@@ -739,7 +739,7 @@ export default function DashboardFinancesModern() {
                
                <div className="space-y-6">
                  <div>
-                   <div className="flex justify-between text-sm font-bold mb-2">
+                   <div className="flex justify-between text-sm font-bold text-lg text-slate-800">
                       <span>Invertir Estalvis</span>
                       <span className="text-blue-400">{investment.percentToInvest}%</span>
                    </div>
