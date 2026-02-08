@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Area, AreaChart
 } from 'recharts';
@@ -17,7 +17,9 @@ import {
   Fuel,
   PiggyBank,
   Target,
-  Download // New Icon for PDF
+  Download,
+  Moon,
+  Sun
 } from 'lucide-react';
 
 // --- PDF LIBRARIES ---
@@ -27,7 +29,7 @@ import autoTable from 'jspdf-autotable';
 // --- UI COMPONENTS ---
 
 const Card = ({ children, className = "", noPadding = false }) => (
-  <div className={`bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden ${className}`}>
+  <div className={`bg-white dark:bg-slate-900/70 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden ${className}`}>
     <div className={noPadding ? "" : "p-6"}>
       {children}
     </div>
@@ -36,12 +38,12 @@ const Card = ({ children, className = "", noPadding = false }) => (
 
 const Badge = ({ children, color = "blue" }) => {
   const styles = {
-    blue: "bg-blue-100 text-blue-700",
-    emerald: "bg-emerald-100 text-emerald-700",
-    purple: "bg-purple-100 text-purple-700",
-    gray: "bg-slate-100 text-slate-700",
-    red: "bg-red-100 text-red-700",
-    amber: "bg-amber-100 text-amber-700",
+    blue: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200",
+    emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200",
+    purple: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200",
+    gray: "bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-200",
+    red: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-200",
+    amber: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200",
   };
   return (
     <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${styles[color] || styles.gray}`}>
@@ -53,23 +55,23 @@ const Badge = ({ children, color = "blue" }) => {
 const SectionHeader = ({ title, icon: Icon, subtitle }) => (
   <div className="mb-6">
     <div className="flex items-center gap-3 mb-1">
-      <div className="p-2 bg-slate-100 rounded-lg text-slate-700">
+      <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200">
         {Icon && <Icon className="w-5 h-5" />}
       </div>
-      <h2 className="text-xl font-bold text-slate-800">{title}</h2>
+      <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{title}</h2>
     </div>
-    {subtitle && <p className="text-sm text-slate-500 ml-12">{subtitle}</p>}
+    {subtitle && <p className="text-sm text-slate-500 dark:text-slate-400 ml-12">{subtitle}</p>}
   </div>
 );
 
 const ModernInput = ({ label, value, onChange, type = "number", suffix = "", step = "1", min = "0", icon: Icon, hint = "", inputMode }) => (
   <div className="group relative">
-    <label className="block text-[11px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
+    <label className="block text-[11px] sm:text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
       {label}
     </label>
     <div className="relative flex items-center">
       {Icon && (
-        <div className="absolute left-3 text-slate-400">
+        <div className="absolute left-3 text-slate-400 dark:text-slate-500">
           <Icon className="w-4 h-4" />
         </div>
       )}
@@ -83,20 +85,20 @@ const ModernInput = ({ label, value, onChange, type = "number", suffix = "", ste
         inputMode={inputMode || (type === "number" ? "decimal" : undefined)}
         aria-label={label}
         className={`
-          block w-full rounded-2xl border border-slate-200 bg-slate-50 
-          py-3 text-base sm:text-sm text-slate-700 font-medium shadow-sm transition-all
-          focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100
+          block w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800
+          py-3 text-base sm:text-sm text-slate-700 dark:text-slate-100 font-medium shadow-sm transition-all
+          focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/40
           touch-manipulation
           ${Icon ? 'pl-10' : 'pl-4'} ${suffix ? 'pr-12' : 'pr-4'}
         `}
       />
       {suffix && (
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-          <span className="text-slate-400 text-xs sm:text-sm font-medium">{suffix}</span>
+          <span className="text-slate-400 dark:text-slate-500 text-xs sm:text-sm font-medium">{suffix}</span>
         </div>
       )}
     </div>
-    {hint && <p className="mt-1 text-[11px] sm:text-xs text-slate-400">{hint}</p>}
+    {hint && <p className="mt-1 text-[11px] sm:text-xs text-slate-400 dark:text-slate-500">{hint}</p>}
   </div>
 );
 
@@ -104,13 +106,13 @@ const ModernInput = ({ label, value, onChange, type = "number", suffix = "", ste
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-4 border border-slate-100 shadow-xl rounded-xl">
-        <p className="font-bold text-slate-800 mb-2">{label}</p>
+      <div className="bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-700 shadow-xl rounded-xl">
+        <p className="font-bold text-slate-800 dark:text-slate-100 mb-2">{label}</p>
         {payload.map((entry, index) => (
           <div key={index} className="flex items-center gap-2 text-sm mb-1">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></div>
-            <span className="text-slate-500">{entry.name}:</span>
-            <span className="font-bold text-slate-700">
+            <span className="text-slate-500 dark:text-slate-400">{entry.name}:</span>
+            <span className="font-bold text-slate-700 dark:text-slate-100">
               {Math.round(entry.value).toLocaleString()} €
             </span>
           </div>
@@ -128,15 +130,15 @@ const ScenarioResult = ({ title, status, monthlyCashFlow, carCost, netMonthly, p
   
   // Dynamic color classes based on theme prop (blue, emerald, purple)
   const themes = {
-    blue: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-900', lightText: 'text-blue-600/80', accent: 'bg-blue-500' },
-    emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-900', lightText: 'text-emerald-600/80', accent: 'bg-emerald-500' },
-    purple: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-900', lightText: 'text-purple-600/80', accent: 'bg-purple-500' },
+    blue: { bg: 'bg-blue-50 dark:bg-blue-500/10', border: 'border-blue-200 dark:border-blue-400/30', text: 'text-blue-900 dark:text-blue-100', lightText: 'text-blue-600/80 dark:text-blue-200/70', accent: 'bg-blue-500' },
+    emerald: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', border: 'border-emerald-200 dark:border-emerald-400/30', text: 'text-emerald-900 dark:text-emerald-100', lightText: 'text-emerald-600/80 dark:text-emerald-200/70', accent: 'bg-emerald-500' },
+    purple: { bg: 'bg-purple-50 dark:bg-purple-500/10', border: 'border-purple-200 dark:border-purple-400/30', text: 'text-purple-900 dark:text-purple-100', lightText: 'text-purple-600/80 dark:text-purple-200/70', accent: 'bg-purple-500' },
   };
   const t = themes[colorTheme] || themes.blue;
 
   // Status Logic
   const StatusIcon = isSustainable ? Check : (isWarning ? AlertTriangle : X);
-  const statusColor = isSustainable ? 'text-emerald-600 bg-emerald-100' : (isWarning ? 'text-amber-600 bg-amber-100' : 'text-red-600 bg-red-100');
+  const statusColor = isSustainable ? 'text-emerald-600 bg-emerald-100 dark:bg-emerald-500/20 dark:text-emerald-200' : (isWarning ? 'text-amber-600 bg-amber-100 dark:bg-amber-500/20 dark:text-amber-200' : 'text-red-600 bg-red-100 dark:bg-red-500/20 dark:text-red-200');
   const statusText = isSustainable ? 'Sostenible' : (isWarning ? 'Atenció' : 'Risc Alt');
 
   return (
@@ -154,31 +156,31 @@ const ScenarioResult = ({ title, status, monthlyCashFlow, carCost, netMonthly, p
 
         {/* Key Metric: Net Monthly */}
         <div className="text-center mb-6">
-          <div className="text-xs uppercase text-slate-500 font-semibold mb-1">Balanç Mensual Net</div>
-          <div className={`text-3xl font-bold ${netMonthly >= 0 ? 'text-slate-800' : 'text-red-500'}`}>
+          <div className="text-xs uppercase text-slate-500 dark:text-slate-400 font-semibold mb-1">Balanç Mensual Net</div>
+          <div className={`text-3xl font-bold ${netMonthly >= 0 ? 'text-slate-800 dark:text-slate-100' : 'text-red-500'}`}>
             {netMonthly > 0 ? '+' : ''}{Math.round(netMonthly)} €
           </div>
-          <div className="text-xs text-slate-400 mt-1">després de totes les despeses</div>
+          <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">després de totes les despeses</div>
         </div>
 
         {/* Detailed Breakdown */}
-        <div className="space-y-3 bg-white/60 p-4 rounded-xl border border-white/50 mb-6">
+        <div className="space-y-3 bg-white/60 dark:bg-slate-900/50 p-4 rounded-xl border border-white/50 dark:border-slate-700/60 mb-6">
           <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-500">Marge Dispon.</span>
-            <span className="font-medium text-slate-700">{Math.round(monthlyCashFlow)} €</span>
+            <span className="text-slate-500 dark:text-slate-400">Marge Dispon.</span>
+            <span className="font-medium text-slate-700 dark:text-slate-100">{Math.round(monthlyCashFlow)} €</span>
           </div>
           <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-500">Cost Real Cotxe</span>
+            <span className="text-slate-500 dark:text-slate-400">Cost Real Cotxe</span>
             <span className="font-bold text-red-500">- {Math.round(carCost)} €</span>
           </div>
         </div>
 
         {/* Mini Projection Preview */}
-        <div className="mt-auto pt-4 border-t border-slate-200/50">
+        <div className="mt-auto pt-4 border-t border-slate-200/50 dark:border-slate-700/60">
            <div className="flex justify-between items-end">
               <div className="text-left">
-                <div className="text-[10px] uppercase text-slate-400 font-bold">Patrimoni Any 10</div>
-                <div className={`text-lg font-bold ${projections[10] > 0 ? 'text-slate-700' : 'text-red-600'}`}>
+                <div className="text-[10px] uppercase text-slate-400 dark:text-slate-500 font-bold">Patrimoni Any 10</div>
+                <div className={`text-lg font-bold ${projections[10] > 0 ? 'text-slate-700 dark:text-slate-100' : 'text-red-600'}`}>
                   {projections[10].toLocaleString()} €
                 </div>
               </div>
@@ -201,6 +203,13 @@ const ScenarioResult = ({ title, status, monthlyCashFlow, carCost, netMonthly, p
 
 export default function DashboardFinancesModern() {
   // --- STATE ---
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = window.localStorage.getItem('theme');
+    if (saved) return saved === 'dark';
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+  });
+
   const [basicFinance, setBasicFinance] = useState({
     savings: 80000,
     pension: 1050,
@@ -249,6 +258,17 @@ export default function DashboardFinancesModern() {
     returnRate: 4.0,
     inflation: 3.0,
   });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.add('dark');
+      window.localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      window.localStorage.setItem('theme', 'light');
+    }
+  }, [isDark]);
 
   // --- LOGIC HELPER ---
   const calculateLoanPmt = (principal, rate, years) => {
@@ -518,7 +538,7 @@ export default function DashboardFinancesModern() {
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen font-sans text-slate-600 pb-20 selection:bg-blue-100 selection:text-blue-900">
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen font-sans text-slate-600 dark:text-slate-300 pb-20 selection:bg-blue-100 dark:selection:bg-blue-900/60 selection:text-blue-900 dark:selection:text-blue-100">
       
       {/* HEADER */}
       <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 text-white pt-8 pb-16 px-4 shadow-lg">
@@ -542,6 +562,16 @@ export default function DashboardFinancesModern() {
                 <Download className="w-5 h-5" />
                 <span className="hidden sm:inline">Descarregar Informe</span>
                 <span className="sm:hidden">PDF</span>
+             </button>
+
+             <button
+               onClick={() => setIsDark((prev) => !prev)}
+               className="flex items-center gap-2 bg-slate-800/70 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl font-bold transition-all shadow-lg"
+               aria-label={isDark ? 'Desactivar mode fosc' : 'Activar mode fosc'}
+             >
+               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+               <span className="hidden sm:inline">{isDark ? 'Mode clar' : 'Mode fosc'}</span>
+               <span className="sm:hidden">{isDark ? 'Clar' : 'Fosc'}</span>
              </button>
 
             <div className="flex flex-col sm:flex-row gap-4 text-sm text-slate-300 bg-slate-800/60 rounded-2xl p-4 w-full sm:w-auto">
@@ -577,14 +607,14 @@ export default function DashboardFinancesModern() {
           {/* Monthly Margin KPI */}
           <Card className={`flex flex-col justify-center shadow-lg border-l-4 ${monthlyCashFlow >= 0 ? 'border-l-emerald-400' : 'border-l-red-400'}`}>
               <div className="text-center">
-                 <div className="inline-flex items-center justify-center p-3 rounded-full bg-slate-100 mb-3">
+                 <div className="inline-flex items-center justify-center p-3 rounded-full bg-slate-100 dark:bg-slate-800 mb-3">
                    {monthlyCashFlow >= 0 ? <TrendingUp className="w-6 h-6 text-emerald-600" /> : <TrendingDown className="w-6 h-6 text-red-600" />}
                  </div>
-                 <h3 className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-1">Capacitat d'Estalvi Mensual</h3>
+                 <h3 className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-xs mb-1">Capacitat d'Estalvi Mensual</h3>
                  <div className={`text-4xl font-extrabold ${monthlyCashFlow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                    {monthlyCashFlow} €
                  </div>
-                 <p className="text-slate-400 text-sm mt-2 px-6 leading-tight">
+                 <p className="text-slate-400 dark:text-slate-500 text-sm mt-2 px-6 leading-tight">
                    Aquests són els diners lliures que tens cada mes per pagar el cotxe i viure.
                  </p>
               </div>
@@ -593,15 +623,15 @@ export default function DashboardFinancesModern() {
 
         {/* SECTION B: CAR COMPARISON */}
         <div>
-          <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <Car className="text-blue-600" />
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
+            <Car className="text-blue-600 dark:text-blue-400" />
             Comparador d'Escenaris
           </h2>
 
           {/* Common Settings Bar */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-6">
-            <div className="flex items-center gap-2 text-slate-700 font-bold mr-auto">
-               <Settings className="w-5 h-5 text-slate-400" />
+          <div className="bg-white dark:bg-slate-900/70 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-5 mb-6 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-6">
+            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-100 font-bold mr-auto">
+               <Settings className="w-5 h-5 text-slate-400 dark:text-slate-500" />
                <span className="hidden sm:inline">Paràmetres Comuns</span>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -619,7 +649,7 @@ export default function DashboardFinancesModern() {
             {/* OPTION 1: BLUE */}
             <Card className="border-t-4 border-t-blue-500 hover:border-t-[6px] transition-all">
               <div className="mb-6 flex justify-between items-start">
-                 <input type="text" value={opt1.name} onChange={(e) => setOpt1({...opt1, name: e.target.value})} className="font-bold text-base sm:text-lg text-blue-900 w-full bg-white/60 border border-blue-100 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+                 <input type="text" value={opt1.name} onChange={(e) => setOpt1({...opt1, name: e.target.value})} className="font-bold text-base sm:text-lg text-blue-900 dark:text-blue-100 w-full bg-white/60 dark:bg-slate-900/60 border border-blue-100 dark:border-blue-400/40 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/50" />
                  <Badge color="blue">Actual</Badge>
               </div>
               <div className="space-y-4">
@@ -629,12 +659,12 @@ export default function DashboardFinancesModern() {
                   <ModernInput label="Despeses/Any" value={opt1.annualMaintenance + opt1.insurance} onChange={(v) => setOpt1({...opt1, annualMaintenance: v, insurance: 0})} step="100" suffix="€" />
                 </div>
                 
-                <div className="mt-6 pt-4 border-t border-slate-100">
+                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex justify-between items-center mb-1">
-                     <span className="text-xs font-bold text-slate-400 uppercase">Cost real mensual</span>
+                     <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">Cost real mensual</span>
                      <span className="text-lg font-bold text-blue-600">{Math.round(scenario1.monthlyAverage)} €</span>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
                     <div className="bg-blue-500 h-1.5 rounded-full" style={{width: `${getMonthlyCostWidth(scenario1.monthlyAverage)}%`}}></div>
                   </div>
                 </div>
@@ -644,16 +674,16 @@ export default function DashboardFinancesModern() {
             {/* OPTION 2: EMERALD */}
             <Card className="border-t-4 border-t-emerald-500 hover:border-t-[6px] transition-all">
               <div className="mb-6 flex justify-between items-start">
-                 <input type="text" value={opt2.name} onChange={(e) => setOpt2({...opt2, name: e.target.value})} className="font-bold text-base sm:text-lg text-emerald-900 w-full bg-white/60 border border-emerald-100 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
+                 <input type="text" value={opt2.name} onChange={(e) => setOpt2({...opt2, name: e.target.value})} className="font-bold text-base sm:text-lg text-emerald-900 dark:text-emerald-100 w-full bg-white/60 dark:bg-slate-900/60 border border-emerald-100 dark:border-emerald-400/40 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:focus:ring-emerald-900/50" />
                  <Badge color="emerald">Econòmic</Badge>
               </div>
               <div className="space-y-4">
                 <ModernInput label="Preu Compra" value={opt2.price} onChange={(v) => setOpt2({...opt2, price: v})} suffix="€" hint="Preu total del vehicle." />
                 
-                <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
+                <div className="bg-emerald-50/50 dark:bg-emerald-500/10 p-3 rounded-xl border border-emerald-100 dark:border-emerald-400/30">
                   <div className="flex items-center mb-3">
-                    <input type="checkbox" id="fin2" checked={opt2.isFinanced} onChange={(e) => setOpt2({...opt2, isFinanced: e.target.checked})} className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-2 focus:ring-emerald-500" />
-                    <label htmlFor="fin2" className="ml-2 text-sm font-medium text-emerald-800">Finançar Compra</label>
+                    <input type="checkbox" id="fin2" checked={opt2.isFinanced} onChange={(e) => setOpt2({...opt2, isFinanced: e.target.checked})} className="w-5 h-5 text-emerald-600 rounded border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-emerald-500" />
+                    <label htmlFor="fin2" className="ml-2 text-sm font-medium text-emerald-800 dark:text-emerald-100">Finançar Compra</label>
                   </div>
                   {opt2.isFinanced && (
                     <div className="grid grid-cols-2 gap-2">
@@ -671,12 +701,12 @@ export default function DashboardFinancesModern() {
                   <ModernInput label="Despeses/Any" value={opt2.annualMaintenance + opt2.insurance} onChange={(v) => setOpt2({...opt2, annualMaintenance: v, insurance: 0})} step="50" suffix="€" />
                 </div>
 
-                 <div className="mt-6 pt-4 border-t border-slate-100">
+                 <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex justify-between items-center mb-1">
-                     <span className="text-xs font-bold text-slate-400 uppercase">Cost real mensual</span>
+                     <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">Cost real mensual</span>
                      <span className="text-lg font-bold text-emerald-600">{Math.round(scenario2.monthlyAverage)} €</span>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
                     <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: `${getMonthlyCostWidth(scenario2.monthlyAverage)}%`}}></div>
                   </div>
                 </div>
@@ -686,16 +716,16 @@ export default function DashboardFinancesModern() {
             {/* OPTION 3: PURPLE */}
             <Card className="border-t-4 border-t-purple-500 hover:border-t-[6px] transition-all">
               <div className="mb-6 flex justify-between items-start">
-                 <input type="text" value={opt3.name} onChange={(e) => setOpt3({...opt3, name: e.target.value})} className="font-bold text-base sm:text-lg text-purple-900 w-full bg-white/60 border border-purple-100 rounded-xl px-3 py-2 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100" />
+                 <input type="text" value={opt3.name} onChange={(e) => setOpt3({...opt3, name: e.target.value})} className="font-bold text-base sm:text-lg text-purple-900 dark:text-purple-100 w-full bg-white/60 dark:bg-slate-900/60 border border-purple-100 dark:border-purple-400/40 rounded-xl px-3 py-2 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900/50" />
                  <Badge color="purple">Premium</Badge>
               </div>
               <div className="space-y-4">
                 <ModernInput label="Preu Compra" value={opt3.price} onChange={(v) => setOpt3({...opt3, price: v})} suffix="€" hint="Preu total del vehicle." />
                 
-                <div className="bg-purple-50/50 p-3 rounded-xl border border-purple-100">
+                <div className="bg-purple-50/50 dark:bg-purple-500/10 p-3 rounded-xl border border-purple-100 dark:border-purple-400/30">
                   <div className="flex items-center mb-3">
-                    <input type="checkbox" id="fin3" checked={opt3.isFinanced} onChange={(e) => setOpt3({...opt3, isFinanced: e.target.checked})} className="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-2 focus:ring-purple-500" />
-                    <label htmlFor="fin3" className="ml-2 text-sm font-medium text-purple-800">Finançar Compra</label>
+                    <input type="checkbox" id="fin3" checked={opt3.isFinanced} onChange={(e) => setOpt3({...opt3, isFinanced: e.target.checked})} className="w-5 h-5 text-purple-600 rounded border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-purple-500" />
+                    <label htmlFor="fin3" className="ml-2 text-sm font-medium text-purple-800 dark:text-purple-100">Finançar Compra</label>
                   </div>
                   {opt3.isFinanced && (
                     <div className="grid grid-cols-2 gap-2">
@@ -713,12 +743,12 @@ export default function DashboardFinancesModern() {
                   <ModernInput label="Despeses/Any" value={opt3.annualMaintenance + opt3.insurance} onChange={(v) => setOpt3({...opt3, annualMaintenance: v, insurance: 0})} step="50" suffix="€" />
                 </div>
 
-                 <div className="mt-6 pt-4 border-t border-slate-100">
+                 <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex justify-between items-center mb-1">
-                     <span className="text-xs font-bold text-slate-400 uppercase">Cost real mensual</span>
+                     <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">Cost real mensual</span>
                      <span className="text-lg font-bold text-purple-600">{Math.round(scenario3.monthlyAverage)} €</span>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
                     <div className="bg-purple-500 h-1.5 rounded-full" style={{width: `${getMonthlyCostWidth(scenario3.monthlyAverage)}%`}}></div>
                   </div>
                 </div>
@@ -739,7 +769,7 @@ export default function DashboardFinancesModern() {
                
                <div className="space-y-6">
                  <div>
-                   <div className="flex justify-between text-sm font-bold text-lg text-slate-800">
+                   <div className="flex justify-between text-sm font-bold text-lg text-slate-100">
                       <span>Invertir Estalvis</span>
                       <span className="text-blue-400">{investment.percentToInvest}%</span>
                    </div>
@@ -764,8 +794,8 @@ export default function DashboardFinancesModern() {
              <Card className="h-full min-h-[400px]">
                <div className="flex justify-between items-center mb-6">
                  <div>
-                   <h3 className="font-bold text-lg text-slate-800">Projecció de Patrimoni a 10 Anys</h3>
-                   <p className="text-sm text-slate-500">Comparativa de l'evolució dels estalvis segons l'opció triada.</p>
+                   <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">Projecció de Patrimoni a 10 Anys</h3>
+                   <p className="text-sm text-slate-500 dark:text-slate-400">Comparativa de l'evolució dels estalvis segons l'opció triada.</p>
                  </div>
                </div>
                
@@ -786,9 +816,9 @@ export default function DashboardFinancesModern() {
                         <stop offset="95%" stopColor="#A855F7" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#e2e8f0'} />
+                    <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: isDark ? '#94a3b8' : '#94a3b8'}} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: isDark ? '#94a3b8' : '#94a3b8'}} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
                     <RechartsTooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{paddingTop: '20px'}} />
                     
@@ -804,8 +834,8 @@ export default function DashboardFinancesModern() {
 
         {/* SECTION E: FINAL RESULTS */}
         <div>
-          <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-             <Target className="text-blue-600" />
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2">
+             <Target className="text-blue-600 dark:text-blue-400" />
              Conclusions Finals
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
