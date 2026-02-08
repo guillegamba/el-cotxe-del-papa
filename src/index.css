@@ -1,0 +1,17 @@
+/* 1. Reset bàsic per assegurar que el dashboard ocupa tota la pantalla */
+body {
+  margin: 0;
+  padding: 0;
+  display: block; /* Important: Vite posa 'flex' per defecte, això ho corregim */
+  min-height: 100vh;
+  width: 100%;
+  background-color: #f9fafb; /* Coincideix amb el fons gris del dashboard */
+}
+
+/* 2. Eliminem les restriccions d'amplada de Vite */
+#root {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left; /* Vite centra el text per defecte, ho posem a l'esquerra */
+}
