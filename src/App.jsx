@@ -275,6 +275,10 @@ export default function DashboardFinancesModern() {
   // --- CORE CALCULATIONS ---
   const monthlyCashFlow = basicFinance.pension - basicFinance.expenses;
   const annualCashFlow = monthlyCashFlow * 12;
+  const clampPercent = (value) => Math.min(100, Math.max(0, value));
+  const getMonthlyCostWidth = (monthlyAverage) => (
+    monthlyCashFlow > 0 ? clampPercent((monthlyAverage / monthlyCashFlow) * 100) : 0
+  );
 
   const scenario1 = calculateCarScenario(1, carCommon, opt1);
   const scenario2 = calculateCarScenario(2, carCommon, opt2);
@@ -467,7 +471,7 @@ export default function DashboardFinancesModern() {
                      <span className="text-lg font-bold text-blue-600">{Math.round(scenario1.monthlyAverage)} €</span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-1.5">
-                    <div className="bg-blue-500 h-1.5 rounded-full" style={{width: `${Math.min(100, (scenario1.monthlyAverage / monthlyCashFlow) * 100)}%`}}></div>
+                    <div className="bg-blue-500 h-1.5 rounded-full" style={{width: `${getMonthlyCostWidth(scenario1.monthlyAverage)}%`}}></div>
                   </div>
                 </div>
               </div>
@@ -509,7 +513,7 @@ export default function DashboardFinancesModern() {
                      <span className="text-lg font-bold text-emerald-600">{Math.round(scenario2.monthlyAverage)} €</span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-1.5">
-                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: `${Math.min(100, (scenario2.monthlyAverage / monthlyCashFlow) * 100)}%`}}></div>
+                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: `${getMonthlyCostWidth(scenario2.monthlyAverage)}%`}}></div>
                   </div>
                 </div>
               </div>
@@ -551,7 +555,7 @@ export default function DashboardFinancesModern() {
                      <span className="text-lg font-bold text-purple-600">{Math.round(scenario3.monthlyAverage)} €</span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-1.5">
-                    <div className="bg-purple-500 h-1.5 rounded-full" style={{width: `${Math.min(100, (scenario3.monthlyAverage / monthlyCashFlow) * 100)}%`}}></div>
+                    <div className="bg-purple-500 h-1.5 rounded-full" style={{width: `${getMonthlyCostWidth(scenario3.monthlyAverage)}%`}}></div>
                   </div>
                 </div>
               </div>
