@@ -1,148 +1,204 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer 
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Area, AreaChart
 } from 'recharts';
 import { 
-  Wallet, TrendingUp, TrendingDown, Car, AlertTriangle, Info, Calculator, Check, X, ArrowRight
+  Wallet, TrendingUp, Car, AlertTriangle, Info, Calculator, Check, X, ChevronRight, Settings, Fuel, PiggyBank, Target
 } from 'lucide-react';
 
-const Card = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-6 ${className}`}>
-    {children}
-  </div>
-);
+// --- UI COMPONENTS ---
 
-const SectionTitle = ({ title, icon: Icon, subtitle }) => (
-  <div className="mb-6 border-b pb-4">
-    <div className="flex items-center gap-2 text-xl font-bold text-gray-800">
-      {Icon && <Icon className="w-6 h-6 text-blue-600" />}
-      {title}
+const Card = ({ children, className = "", noPadding = false }) => (
+  <div className={`bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden ${className}`}>
+    <div className={noPadding ? "" : "p-6"}>
+      {children}
     </div>
-    {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
   </div>
 );
 
-const InputGroup = ({ label, value, onChange, type = "number", suffix = "", step = "1", min="0" }) => (
-  <div className="mb-3">
-    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{label}</label>
-    <div className="relative rounded-md shadow-sm">
+const Badge = ({ children, color = "blue" }) => {
+  const styles = {
+    blue: "bg-blue-100 text-blue-700",
+    emerald: "bg-emerald-100 text-emerald-700",
+    purple: "bg-purple-100 text-purple-700",
+    gray: "bg-slate-100 text-slate-700",
+    red: "bg-red-100 text-red-700",
+    amber: "bg-amber-100 text-amber-700",
+  };
+  return (
+    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${styles[color] || styles.gray}`}>
+      {children}
+    </span>
+  );
+};
+
+const SectionHeader = ({ title, icon: Icon, subtitle }) => (
+  <div className="mb-6">
+    <div className="flex items-center gap-3 mb-1">
+      <div className="p-2 bg-slate-100 rounded-lg text-slate-700">
+        {Icon && <Icon className="w-5 h-5" />}
+      </div>
+      <h2 className="text-xl font-bold text-slate-800">{title}</h2>
+    </div>
+    {subtitle && <p className="text-sm text-slate-500 ml-12">{subtitle}</p>}
+  </div>
+);
+
+const ModernInput = ({ label, value, onChange, type = "number", suffix = "", step = "1", min = "0", icon: Icon }) => (
+  <div className="group relative">
+    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
+      {label}
+    </label>
+    <div className="relative flex items-center">
+      {Icon && (
+        <div className="absolute left-3 text-slate-400">
+          <Icon className="w-4 h-4" />
+        </div>
+      )}
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
         step={step}
         min={min}
-        className="block w-full rounded-md border-gray-300 pl-3 pr-12 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-gray-50 border"
+        className={`
+          block w-full rounded-xl border-slate-200 bg-slate-50 
+          py-2.5 text-slate-700 font-medium shadow-sm transition-all
+          focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100
+          ${Icon ? 'pl-9' : 'pl-3'} ${suffix ? 'pr-12' : 'pr-3'}
+        `}
       />
       {suffix && (
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-          <span className="text-gray-500 sm:text-sm">{suffix}</span>
+          <span className="text-slate-400 text-sm font-medium">{suffix}</span>
         </div>
       )}
     </div>
   </div>
 );
 
-// Component nou per a les targetes estil "screenshot"
-const ResultCard = ({ title, status, monthlyCashFlow, carCost, netMonthly, projections }) => {
+// Custom Tooltip for Recharts
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-4 border border-slate-100 shadow-xl rounded-xl">
+        <p className="font-bold text-slate-800 mb-2">{label}</p>
+        {payload.map((entry, index) => (
+          <div key={index} className="flex items-center gap-2 text-sm mb-1">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></div>
+            <span className="text-slate-500">{entry.name}:</span>
+            <span className="font-bold text-slate-700">
+              {Math.round(entry.value).toLocaleString()} €
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+// Component for the "Result/Scenario" cards
+const ScenarioResult = ({ title, status, monthlyCashFlow, carCost, netMonthly, projections, colorTheme }) => {
   const isSustainable = status === 'green';
   const isWarning = status === 'orange';
   
-  // Colors segons estat
-  const headerColor = isSustainable ? 'text-emerald-800' : (isWarning ? 'text-amber-800' : 'text-red-800');
-  const iconColor = isSustainable ? 'text-emerald-600' : (isWarning ? 'text-amber-600' : 'text-red-600');
-  const borderColor = isSustainable ? 'border-emerald-200' : (isWarning ? 'border-amber-200' : 'border-red-200');
-  const bgColor = isSustainable ? 'bg-emerald-50' : (isWarning ? 'bg-amber-50' : 'bg-red-50');
-  
-  // Icona
+  // Dynamic color classes based on theme prop (blue, emerald, purple)
+  const themes = {
+    blue: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-900', lightText: 'text-blue-600/80', accent: 'bg-blue-500' },
+    emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-900', lightText: 'text-emerald-600/80', accent: 'bg-emerald-500' },
+    purple: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-900', lightText: 'text-purple-600/80', accent: 'bg-purple-500' },
+  };
+  const t = themes[colorTheme] || themes.blue;
+
+  // Status Logic
   const StatusIcon = isSustainable ? Check : (isWarning ? AlertTriangle : X);
-  const statusText = isSustainable ? 'Sostenible' : (isWarning ? 'Ajustos' : 'Insostenible');
+  const statusColor = isSustainable ? 'text-emerald-600 bg-emerald-100' : (isWarning ? 'text-amber-600 bg-amber-100' : 'text-red-600 bg-red-100');
+  const statusText = isSustainable ? 'Sostenible' : (isWarning ? 'Atenció' : 'Risc Alt');
 
   return (
-    <div className={`rounded-xl border shadow-sm overflow-hidden ${borderColor} ${bgColor}`}>
-      {/* Capçalera */}
-      <div className="p-5 pb-4">
-        <div className="flex items-center gap-3 mb-1">
-          <div className={`rounded-full p-1 border-2 ${borderColor} bg-white`}>
-            <StatusIcon className={`w-5 h-5 ${iconColor}`} />
-          </div>
-          <div>
-            <h3 className={`font-bold text-lg ${headerColor}`}>{title}</h3>
-            <p className={`text-xs uppercase tracking-wide opacity-70 ${headerColor}`}>{statusText}</p>
-          </div>
-        </div>
-
-        {/* Línies de detall */}
-        <div className="mt-6 space-y-3">
-          <div className="flex justify-between items-center text-sm text-gray-600">
-            <span>Marge mensual (Pensió - Despeses)</span>
-            <span className={monthlyCashFlow >= 0 ? "font-medium" : "text-red-600 font-medium"}>
-              {Math.round(monthlyCashFlow)} €
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-sm text-gray-600">
-            <span>Cost real cotxe/mes (mitjana 10a)</span>
-            <span className="font-bold text-gray-800">
-              - {Math.round(carCost)} €
-            </span>
-          </div>
-          <div className="h-px bg-black/5 my-2"></div>
-          <div className="flex justify-between items-center text-base">
-            <span className="font-bold text-gray-700">Net Mensual Resultant</span>
-            <span className={`font-bold text-lg ${netMonthly >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-              {netMonthly > 0 ? '+' : ''}{Math.round(netMonthly)} €
-            </span>
-          </div>
+    <div className={`relative flex flex-col h-full rounded-2xl border transition-all duration-300 hover:shadow-md ${t.bg} ${t.border}`}>
+      {/* Badge Header */}
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm border border-white ${statusColor}`}>
+          <StatusIcon className="w-3 h-3" />
+          {statusText}
         </div>
       </div>
 
-      {/* Caixa Projeccions Inferior */}
-      <div className="bg-black/5 p-4 grid grid-cols-3 gap-2 text-center border-t border-black/5">
-        <div>
-          <div className="text-[10px] uppercase text-gray-500 font-bold mb-1">Any 1</div>
-          <div className="text-sm font-bold text-gray-800">{projections[1].toLocaleString()} €</div>
+      <div className="p-6 flex-1 flex flex-col">
+        <h3 className={`text-center font-bold text-lg mb-6 ${t.text}`}>{title}</h3>
+
+        {/* Key Metric: Net Monthly */}
+        <div className="text-center mb-6">
+          <div className="text-xs uppercase text-slate-500 font-semibold mb-1">Balanç Mensual Net</div>
+          <div className={`text-3xl font-bold ${netMonthly >= 0 ? 'text-slate-800' : 'text-red-500'}`}>
+            {netMonthly > 0 ? '+' : ''}{Math.round(netMonthly)} €
+          </div>
+          <div className="text-xs text-slate-400 mt-1">després de totes les despeses</div>
         </div>
-        <div>
-          <div className="text-[10px] uppercase text-gray-500 font-bold mb-1">Any 5</div>
-          <div className="text-sm font-bold text-gray-800">{projections[5].toLocaleString()} €</div>
+
+        {/* Detailed Breakdown */}
+        <div className="space-y-3 bg-white/60 p-4 rounded-xl border border-white/50 mb-6">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-500">Marge Dispon.</span>
+            <span className="font-medium text-slate-700">{Math.round(monthlyCashFlow)} €</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-500">Cost Real Cotxe</span>
+            <span className="font-bold text-red-500">- {Math.round(carCost)} €</span>
+          </div>
         </div>
-        <div>
-          <div className="text-[10px] uppercase text-gray-500 font-bold mb-1">Any 10</div>
-          <div className="text-sm font-bold text-gray-800">{projections[10].toLocaleString()} €</div>
+
+        {/* Mini Projection Preview */}
+        <div className="mt-auto pt-4 border-t border-slate-200/50">
+           <div className="flex justify-between items-end">
+              <div className="text-left">
+                <div className="text-[10px] uppercase text-slate-400 font-bold">Patrimoni Any 10</div>
+                <div className={`text-lg font-bold ${projections[10] > 0 ? 'text-slate-700' : 'text-red-600'}`}>
+                  {projections[10].toLocaleString()} €
+                </div>
+              </div>
+              <div className="h-8 w-16 opacity-50">
+                {/* Visual sparkline simplified */}
+                 <div className="flex items-end h-full gap-1">
+                    <div className={`w-1/3 rounded-t-sm ${t.accent}`} style={{height: '30%'}}></div>
+                    <div className={`w-1/3 rounded-t-sm ${t.accent}`} style={{height: '60%'}}></div>
+                    <div className={`w-1/3 rounded-t-sm ${t.accent}`} style={{height: '100%'}}></div>
+                 </div>
+              </div>
+           </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default function DashboardFinancesComparatiu() {
-  // --- ESTAT ---
+// --- MAIN APP ---
 
-  // Secció A: Finances Bàsiques
+export default function DashboardFinancesModern() {
+  // --- STATE ---
   const [basicFinance, setBasicFinance] = useState({
     savings: 80000,
     pension: 1050,
     expenses: 800,
   });
 
-  // Secció B: Dades Comunes Cotxes
   const [carCommon, setCarCommon] = useState({
     kmPerYear: 10000,
-    fuelCost: 1.6, // €/L
+    fuelCost: 1.6,
   });
 
-  // Opció 1: Quedar-se el cotxe (Toyota Corolla Renting)
   const [opt1, setOpt1] = useState({
-    name: "Opció 1 (Actual)",
+    name: "Actual (Renting)",
     finalPayment: 20000,
     annualMaintenance: 600,
-    consumption: 5.0, // L/100km
+    consumption: 5.0,
     insurance: 600,
   });
 
-  // Opció 2: Opció A (Neutre)
   const [opt2, setOpt2] = useState({
-    name: "Opció 2 (Econòmic)",
+    name: "Ocasió (Econòmic)",
     price: 18000,
     isFinanced: false,
     downPayment: 5000,
@@ -153,9 +209,8 @@ export default function DashboardFinancesComparatiu() {
     insurance: 500,
   });
 
-  // Opció 3: Opció B (Neutre)
   const [opt3, setOpt3] = useState({
-    name: "Opció 3 (Nou)",
+    name: "Nou (Premium)",
     price: 28000,
     isFinanced: true,
     downPayment: 8000,
@@ -166,15 +221,13 @@ export default function DashboardFinancesComparatiu() {
     insurance: 700,
   });
 
-  // Secció C: Inversions
   const [investment, setInvestment] = useState({
-    percentToInvest: 50, // % dels estalvis restants
-    returnRate: 4.0, // % anual
-    inflation: 3.0, // % anual
+    percentToInvest: 50,
+    returnRate: 4.0,
+    inflation: 3.0,
   });
 
-  // --- CÀLCULS AUXILIARS ---
-
+  // --- LOGIC HELPER ---
   const calculateLoanPmt = (principal, rate, years) => {
     if (principal <= 0 || rate <= 0 || years <= 0) return 0;
     const r = rate / 100 / 12;
@@ -219,8 +272,7 @@ export default function DashboardFinancesComparatiu() {
     };
   };
 
-  // --- CÀLCULS PRINCIPALS I PROJECCIÓ ---
-
+  // --- CORE CALCULATIONS ---
   const monthlyCashFlow = basicFinance.pension - basicFinance.expenses;
   const annualCashFlow = monthlyCashFlow * 12;
 
@@ -291,7 +343,6 @@ export default function DashboardFinancesComparatiu() {
     return data;
   }, [basicFinance, scenario1, scenario2, scenario3, annualCashFlow, investment]);
 
-  // Estats finals i dades per als cards
   const finalState = {
     opt1: projectionData[10].opt1,
     opt2: projectionData[10].opt2,
@@ -304,7 +355,6 @@ export default function DashboardFinancesComparatiu() {
     return "green";
   };
 
-  // Funció per extreure les dades de projecció d'una opció específica (1, 5, 10 anys)
   const getProjectionsForOption = (optionKey) => ({
       1: projectionData[1][optionKey],
       5: projectionData[5][optionKey],
@@ -312,290 +362,314 @@ export default function DashboardFinancesComparatiu() {
   });
 
   return (
-    <div className="bg-gray-50 min-h-screen font-sans text-gray-700 pb-12">
+    <div className="bg-slate-50 min-h-screen font-sans text-slate-600 pb-20 selection:bg-blue-100 selection:text-blue-900">
+      
       {/* HEADER */}
-      <header className="bg-slate-800 text-white py-6 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Calculator className="h-8 w-8 text-blue-300" />
-            Dashboard Comparatiu de Jubilació
-          </h1>
-          <p className="text-slate-300 mt-2 text-lg">
-            Simulació simultània de les 3 opcions financeres a 10 anys vista.
-          </p>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        
-        {/* SECCIÓ A: FINANCES BÀSIQUES */}
-        <section>
-          <SectionTitle 
-            title="A. Situació Base" 
-            icon={Wallet} 
-            subtitle="Defineix la teva capacitat econòmica actual."
-          />
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card>
-              <InputGroup label="Estalvis Disponibles (€)" value={basicFinance.savings} onChange={(v) => setBasicFinance({...basicFinance, savings: v})} step="1000" />
-              <InputGroup label="Pensió Mensual Neta (€)" value={basicFinance.pension} onChange={(v) => setBasicFinance({...basicFinance, pension: v})} />
-              <InputGroup label="Despeses Fixes (€)" value={basicFinance.expenses} onChange={(v) => setBasicFinance({...basicFinance, expenses: v})} />
-            </Card>
-            
-            <div className={`p-4 rounded-lg border flex flex-col justify-center items-center ${monthlyCashFlow >= 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-               <div className="text-sm uppercase tracking-wide opacity-70">Marge Mensual</div>
-               <div className="text-3xl font-bold mt-2">{monthlyCashFlow > 0 ? '+' : ''}{monthlyCashFlow} €</div>
-               <div className="text-xs mt-1 opacity-70">Disponibles per a cotxe/estalvi</div>
+      <div className="bg-slate-900 text-white pt-8 pb-16 px-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+             <div className="flex items-center gap-2 mb-2 opacity-80">
+                <Badge color="blue">v2.0 Beta</Badge>
+                <span className="text-sm font-medium">Calculadora Jubilació</span>
+             </div>
+             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
+               Jubileta Dashboard
+             </h1>
+          </div>
+          
+          <div className="flex gap-4 text-sm text-slate-400">
+            <div className="text-right">
+              <div className="font-bold text-white text-lg">{basicFinance.savings.toLocaleString()} €</div>
+              <div>Patrimoni Inicial</div>
             </div>
+            <div className="h-10 w-px bg-slate-700"></div>
+            <div className="text-right">
+              <div className={`font-bold text-lg ${monthlyCashFlow > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {monthlyCashFlow > 0 ? '+' : ''}{monthlyCashFlow} €
+              </div>
+              <div>Marge Mensual</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            <div className="md:col-span-2 bg-white rounded-xl shadow-sm border p-4">
-              <h4 className="text-xs font-bold text-gray-400 uppercase mb-2">Balanç Mensual</h4>
-               <div className="h-24 w-full">
+      <main className="max-w-7xl mx-auto px-4 -mt-8 space-y-8">
+        
+        {/* SECTION A: BASE FINANCES (Top Cards) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2 shadow-lg">
+             <SectionHeader title="Finances Personals" icon={Wallet} subtitle="Defineix la teva base econòmica per calcular la viabilitat." />
+             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <ModernInput label="Estalvis Actuals" value={basicFinance.savings} onChange={(v) => setBasicFinance({...basicFinance, savings: v})} step="1000" suffix="€" icon={PiggyBank} />
+                <ModernInput label="Ingressos Nets" value={basicFinance.pension} onChange={(v) => setBasicFinance({...basicFinance, pension: v})} suffix="€/mes" icon={Wallet} />
+                <ModernInput label="Despeses Fixes" value={basicFinance.expenses} onChange={(v) => setBasicFinance({...basicFinance, expenses: v})} suffix="€/mes" icon={Target} />
+             </div>
+          </Card>
+
+          {/* Monthly Margin KPI */}
+          <Card className={`flex flex-col justify-center shadow-lg border-l-4 ${monthlyCashFlow >= 0 ? 'border-l-emerald-400' : 'border-l-red-400'}`}>
+              <div className="text-center">
+                 <div className="inline-flex items-center justify-center p-3 rounded-full bg-slate-100 mb-3">
+                   {monthlyCashFlow >= 0 ? <TrendingUp className="w-6 h-6 text-emerald-600" /> : <TrendingDown className="w-6 h-6 text-red-600" />}
+                 </div>
+                 <h3 className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-1">Capacitat d'Estalvi Mensual</h3>
+                 <div className={`text-4xl font-extrabold ${monthlyCashFlow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                   {monthlyCashFlow} €
+                 </div>
+                 <p className="text-slate-400 text-sm mt-2 px-6 leading-tight">
+                   Aquests són els diners lliures que tens cada mes per pagar el cotxe i viure.
+                 </p>
+              </div>
+          </Card>
+        </div>
+
+        {/* SECTION B: CAR COMPARISON */}
+        <div>
+          <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <Car className="text-blue-600" />
+            Comparador d'Escenaris
+          </h2>
+
+          {/* Common Settings Bar */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-2 text-slate-700 font-bold mr-auto">
+               <Settings className="w-5 h-5 text-slate-400" />
+               <span className="hidden sm:inline">Paràmetres Comuns</span>
+            </div>
+            <div className="flex gap-4 flex-1 sm:flex-none">
+              <div className="flex-1 sm:w-40">
+                <ModernInput label="Km / Any" value={carCommon.kmPerYear} onChange={(v) => setCarCommon({...carCommon, kmPerYear: v})} step="1000" suffix="km" />
+              </div>
+              <div className="flex-1 sm:w-40">
+                 <ModernInput label="Preu Gasolina" value={carCommon.fuelCost} onChange={(v) => setCarCommon({...carCommon, fuelCost: v})} step="0.1" suffix="€/L" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* OPTION 1: BLUE */}
+            <Card className="border-t-4 border-t-blue-500 hover:border-t-[6px] transition-all">
+              <div className="mb-6 flex justify-between items-start">
+                 <input type="text" value={opt1.name} onChange={(e) => setOpt1({...opt1, name: e.target.value})} className="font-bold text-lg text-blue-900 w-full bg-transparent border-b border-dashed border-blue-200 focus:outline-none focus:border-blue-500" />
+                 <Badge color="blue">Actual</Badge>
+              </div>
+              <div className="space-y-4">
+                <ModernInput label="Pagament Final" value={opt1.finalPayment} onChange={(v) => setOpt1({...opt1, finalPayment: v})} suffix="€" />
+                <div className="grid grid-cols-2 gap-4">
+                  <ModernInput label="Consum" value={opt1.consumption} onChange={(v) => setOpt1({...opt1, consumption: v})} suffix="L/100" />
+                  <ModernInput label="Despeses/Any" value={opt1.annualMaintenance + opt1.insurance} onChange={(v) => setOpt1({...opt1, annualMaintenance: v, insurance: 0})} suffix="€" />
+                </div>
+                
+                <div className="mt-6 pt-4 border-t border-slate-100">
+                  <div className="flex justify-between items-center mb-1">
+                     <span className="text-xs font-bold text-slate-400 uppercase">Cost real mensual</span>
+                     <span className="text-lg font-bold text-blue-600">{Math.round(scenario1.monthlyAverage)} €</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-1.5">
+                    <div className="bg-blue-500 h-1.5 rounded-full" style={{width: `${Math.min(100, (scenario1.monthlyAverage / monthlyCashFlow) * 100)}%`}}></div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* OPTION 2: EMERALD */}
+            <Card className="border-t-4 border-t-emerald-500 hover:border-t-[6px] transition-all">
+              <div className="mb-6 flex justify-between items-start">
+                 <input type="text" value={opt2.name} onChange={(e) => setOpt2({...opt2, name: e.target.value})} className="font-bold text-lg text-emerald-900 w-full bg-transparent border-b border-dashed border-emerald-200 focus:outline-none focus:border-emerald-500" />
+                 <Badge color="emerald">Econòmic</Badge>
+              </div>
+              <div className="space-y-4">
+                <ModernInput label="Preu Compra" value={opt2.price} onChange={(v) => setOpt2({...opt2, price: v})} suffix="€" />
+                
+                <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
+                  <div className="flex items-center mb-3">
+                    <input type="checkbox" id="fin2" checked={opt2.isFinanced} onChange={(e) => setOpt2({...opt2, isFinanced: e.target.checked})} className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" />
+                    <label htmlFor="fin2" className="ml-2 text-sm font-medium text-emerald-800">Finançar Compra</label>
+                  </div>
+                  {opt2.isFinanced && (
+                    <div className="grid grid-cols-2 gap-2">
+                       <ModernInput label="Entrada" value={opt2.downPayment} onChange={(v) => setOpt2({...opt2, downPayment: v})} suffix="€" />
+                       <ModernInput label="Interès" value={opt2.interestRate} onChange={(v) => setOpt2({...opt2, interestRate: v})} suffix="%" step="0.1" />
+                       <div className="col-span-2">
+                        <ModernInput label="Durada (Anys)" value={opt2.years} onChange={(v) => setOpt2({...opt2, years: v})} suffix="anys" />
+                       </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <ModernInput label="Consum" value={opt2.consumption} onChange={(v) => setOpt2({...opt2, consumption: v})} suffix="L/100" />
+                  <ModernInput label="Despeses/Any" value={opt2.annualMaintenance + opt2.insurance} onChange={(v) => setOpt2({...opt2, annualMaintenance: v, insurance: 0})} suffix="€" />
+                </div>
+
+                 <div className="mt-6 pt-4 border-t border-slate-100">
+                  <div className="flex justify-between items-center mb-1">
+                     <span className="text-xs font-bold text-slate-400 uppercase">Cost real mensual</span>
+                     <span className="text-lg font-bold text-emerald-600">{Math.round(scenario2.monthlyAverage)} €</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-1.5">
+                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: `${Math.min(100, (scenario2.monthlyAverage / monthlyCashFlow) * 100)}%`}}></div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* OPTION 3: PURPLE */}
+            <Card className="border-t-4 border-t-purple-500 hover:border-t-[6px] transition-all">
+              <div className="mb-6 flex justify-between items-start">
+                 <input type="text" value={opt3.name} onChange={(e) => setOpt3({...opt3, name: e.target.value})} className="font-bold text-lg text-purple-900 w-full bg-transparent border-b border-dashed border-purple-200 focus:outline-none focus:border-purple-500" />
+                 <Badge color="purple">Premium</Badge>
+              </div>
+              <div className="space-y-4">
+                <ModernInput label="Preu Compra" value={opt3.price} onChange={(v) => setOpt3({...opt3, price: v})} suffix="€" />
+                
+                <div className="bg-purple-50/50 p-3 rounded-xl border border-purple-100">
+                  <div className="flex items-center mb-3">
+                    <input type="checkbox" id="fin3" checked={opt3.isFinanced} onChange={(e) => setOpt3({...opt3, isFinanced: e.target.checked})} className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500" />
+                    <label htmlFor="fin3" className="ml-2 text-sm font-medium text-purple-800">Finançar Compra</label>
+                  </div>
+                  {opt3.isFinanced && (
+                    <div className="grid grid-cols-2 gap-2">
+                       <ModernInput label="Entrada" value={opt3.downPayment} onChange={(v) => setOpt3({...opt3, downPayment: v})} suffix="€" />
+                       <ModernInput label="Interès" value={opt3.interestRate} onChange={(v) => setOpt3({...opt3, interestRate: v})} suffix="%" step="0.1" />
+                       <div className="col-span-2">
+                        <ModernInput label="Durada (Anys)" value={opt3.years} onChange={(v) => setOpt3({...opt3, years: v})} suffix="anys" />
+                       </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <ModernInput label="Consum" value={opt3.consumption} onChange={(v) => setOpt3({...opt3, consumption: v})} suffix="L/100" />
+                  <ModernInput label="Despeses/Any" value={opt3.annualMaintenance + opt3.insurance} onChange={(v) => setOpt3({...opt3, annualMaintenance: v, insurance: 0})} suffix="€" />
+                </div>
+
+                 <div className="mt-6 pt-4 border-t border-slate-100">
+                  <div className="flex justify-between items-center mb-1">
+                     <span className="text-xs font-bold text-slate-400 uppercase">Cost real mensual</span>
+                     <span className="text-lg font-bold text-purple-600">{Math.round(scenario3.monthlyAverage)} €</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-1.5">
+                    <div className="bg-purple-500 h-1.5 rounded-full" style={{width: `${Math.min(100, (scenario3.monthlyAverage / monthlyCashFlow) * 100)}%`}}></div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+          </div>
+        </div>
+
+        {/* SECTION C & D: INVESTMENT & CHART */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+           
+           {/* Investment Sidebar */}
+           <div className="lg:col-span-1">
+             <Card className="h-full bg-slate-800 text-slate-100 border-none shadow-xl">
+               <SectionHeader title="Inversions" icon={TrendingUp} />
+               <p className="text-xs text-slate-400 mb-6">Ajusta el rendiment dels diners que NO gastes en el cotxe.</p>
+               
+               <div className="space-y-6">
+                 <div>
+                   <div className="flex justify-between text-sm font-bold mb-2">
+                      <span>Invertir Estalvis</span>
+                      <span className="text-blue-400">{investment.percentToInvest}%</span>
+                   </div>
+                   <input 
+                      type="range" min="0" max="100" step="5"
+                      value={investment.percentToInvest}
+                      onChange={(e) => setInvestment({...investment, percentToInvest: parseInt(e.target.value)})}
+                      className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                   />
+                 </div>
+                 
+                 <div className="space-y-4 pt-4 border-t border-slate-700">
+                    <ModernInput label="Rendiment Anual" value={investment.returnRate} onChange={(v) => setInvestment({...investment, returnRate: v})} suffix="%" step="0.1" />
+                    <ModernInput label="Inflació" value={investment.inflation} onChange={(v) => setInvestment({...investment, inflation: v})} suffix="%" step="0.1" />
+                 </div>
+               </div>
+             </Card>
+           </div>
+
+           {/* Chart Area */}
+           <div className="lg:col-span-3">
+             <Card className="h-full min-h-[400px]">
+               <div className="flex justify-between items-center mb-6">
+                 <div>
+                   <h3 className="font-bold text-lg text-slate-800">Projecció de Patrimoni a 10 Anys</h3>
+                   <p className="text-sm text-slate-500">Comparativa de l'evolució dels estalvis segons l'opció triada.</p>
+                 </div>
+               </div>
+               
+               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart layout="vertical" data={[{ name: 'Balanç', ing: basicFinance.pension, desp: basicFinance.expenses }]} margin={{top:0, left:0, right:30, bottom:0}}>
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" hide />
-                    <RechartsTooltip />
-                    <Legend />
-                    <Bar dataKey="ing" fill="#10B981" radius={[0, 4, 4, 0]} name="Ingressos" barSize={20} />
-                    <Bar dataKey="desp" fill="#EF4444" radius={[0, 4, 4, 0]} name="Despeses" barSize={20} />
-                  </BarChart>
+                  <AreaChart data={projectionData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorOpt1" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorOpt2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorOpt3" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#A855F7" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#A855F7" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
+                    <RechartsTooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{paddingTop: '20px'}} />
+                    
+                    <Area type="monotone" dataKey="opt1" name={opt1.name} stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorOpt1)" />
+                    <Area type="monotone" dataKey="opt2" name={opt2.name} stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorOpt2)" />
+                    <Area type="monotone" dataKey="opt3" name={opt3.name} stroke="#A855F7" strokeWidth={3} fillOpacity={1} fill="url(#colorOpt3)" />
+                  </AreaChart>
                 </ResponsiveContainer>
                </div>
-            </div>
-          </div>
-        </section>
+             </Card>
+           </div>
+        </div>
 
-        {/* SECCIÓ B: COMPARADOR DE COTXE */}
-        <section>
-          <SectionTitle 
-            title="B. Configuració de les 3 Opcions" 
-            icon={Car} 
-            subtitle="Defineix els detalls de cada escenari per comparar-los."
-          />
-
-          {/* PARÀMETRES COMUNS */}
-          <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6 flex flex-wrap gap-6 items-center">
-             <div className="text-blue-800 font-bold flex items-center gap-2">
-               <Info className="w-5 h-5" />
-               Dades Comunes:
-             </div>
-             <div className="w-40">
-                <InputGroup label="Km Anuals" value={carCommon.kmPerYear} onChange={(v) => setCarCommon({...carCommon, kmPerYear: v})} step="1000" suffix="km" />
-             </div>
-             <div className="w-40">
-                <InputGroup label="Preu Gasolina" value={carCommon.fuelCost} onChange={(v) => setCarCommon({...carCommon, fuelCost: v})} step="0.1" suffix="€/L" />
-             </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            
-            {/* Opció 1 */}
-            <div className="rounded-xl border-t-4 border-t-blue-500 bg-white shadow-sm border p-4">
-              <div className="mb-4 border-b pb-2">
-                <input 
-                  type="text" 
-                  value={opt1.name} 
-                  onChange={(e) => setOpt1({...opt1, name: e.target.value})} 
-                  className="font-bold text-lg text-blue-900 w-full focus:outline-none focus:bg-gray-50 rounded"
-                />
-              </div>
-              <div className="space-y-3">
-                <InputGroup label="Pagament Final" value={opt1.finalPayment} onChange={(v) => setOpt1({...opt1, finalPayment: v})} step="500" suffix="€" />
-                <InputGroup label="Consum (L/100km)" value={opt1.consumption} onChange={(v) => setOpt1({...opt1, consumption: v})} step="0.1" />
-                <InputGroup label="Mant. + Assegurança (Anual)" value={opt1.annualMaintenance + opt1.insurance} onChange={(v) => setOpt1({...opt1, annualMaintenance: v, insurance: 0})} suffix="€" />
-                
-                <div className="bg-gray-50 p-3 rounded mt-4">
-                  <div className="text-xs text-gray-500">Cost total 10 anys</div>
-                  <div className="text-xl font-bold text-blue-600">{Math.round(scenario1.totalCost10Years).toLocaleString()} €</div>
-                  <div className="text-xs text-gray-400 mt-1">{Math.round(scenario1.monthlyAverage)} € / mes (mitjana)</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Opció 2 */}
-            <div className="rounded-xl border-t-4 border-t-emerald-500 bg-white shadow-sm border p-4">
-              <div className="mb-4 border-b pb-2">
-                <input 
-                  type="text" 
-                  value={opt2.name} 
-                  onChange={(e) => setOpt2({...opt2, name: e.target.value})} 
-                  className="font-bold text-lg text-emerald-900 w-full focus:outline-none focus:bg-gray-50 rounded"
-                />
-              </div>
-              <div className="space-y-3">
-                <InputGroup label="Preu Compra" value={opt2.price} onChange={(v) => setOpt2({...opt2, price: v})} suffix="€" />
-                <div className="flex items-center mb-2 text-sm">
-                  <input type="checkbox" checked={opt2.isFinanced} onChange={(e) => setOpt2({...opt2, isFinanced: e.target.checked})} className="mr-2" />
-                  <span className={opt2.isFinanced ? "font-bold text-emerald-700" : "text-gray-500"}>Finançar Compra</span>
-                </div>
-                {opt2.isFinanced && (
-                  <div className="grid grid-cols-2 gap-2 bg-emerald-50 p-2 rounded text-xs">
-                     <div className="col-span-2"><InputGroup label="Entrada" value={opt2.downPayment} onChange={(v) => setOpt2({...opt2, downPayment: v})} suffix="€" /></div>
-                     <InputGroup label="Interès %" value={opt2.interestRate} onChange={(v) => setOpt2({...opt2, interestRate: v})} step="0.1" />
-                     <InputGroup label="Anys" value={opt2.years} onChange={(v) => setOpt2({...opt2, years: v})} />
-                  </div>
-                )}
-                <InputGroup label="Consum (L/100km)" value={opt2.consumption} onChange={(v) => setOpt2({...opt2, consumption: v})} step="0.1" />
-                <InputGroup label="Mant. + Assegurança (Anual)" value={opt2.annualMaintenance + opt2.insurance} onChange={(v) => setOpt2({...opt2, annualMaintenance: v, insurance: 0})} suffix="€" />
-
-                <div className="bg-gray-50 p-3 rounded mt-4">
-                  <div className="text-xs text-gray-500">Cost total 10 anys</div>
-                  <div className="text-xl font-bold text-emerald-600">{Math.round(scenario2.totalCost10Years).toLocaleString()} €</div>
-                  <div className="text-xs text-gray-400 mt-1">{Math.round(scenario2.monthlyAverage)} € / mes (mitjana)</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Opció 3 */}
-            <div className="rounded-xl border-t-4 border-t-purple-500 bg-white shadow-sm border p-4">
-              <div className="mb-4 border-b pb-2">
-                <input 
-                  type="text" 
-                  value={opt3.name} 
-                  onChange={(e) => setOpt3({...opt3, name: e.target.value})} 
-                  className="font-bold text-lg text-purple-900 w-full focus:outline-none focus:bg-gray-50 rounded"
-                />
-              </div>
-              <div className="space-y-3">
-                <InputGroup label="Preu Compra" value={opt3.price} onChange={(v) => setOpt3({...opt3, price: v})} suffix="€" />
-                <div className="flex items-center mb-2 text-sm">
-                  <input type="checkbox" checked={opt3.isFinanced} onChange={(e) => setOpt3({...opt3, isFinanced: e.target.checked})} className="mr-2" />
-                  <span className={opt3.isFinanced ? "font-bold text-purple-700" : "text-gray-500"}>Finançar Compra</span>
-                </div>
-                {opt3.isFinanced && (
-                  <div className="grid grid-cols-2 gap-2 bg-purple-50 p-2 rounded text-xs">
-                     <div className="col-span-2"><InputGroup label="Entrada" value={opt3.downPayment} onChange={(v) => setOpt3({...opt3, downPayment: v})} suffix="€" /></div>
-                     <InputGroup label="Interès %" value={opt3.interestRate} onChange={(v) => setOpt3({...opt3, interestRate: v})} step="0.1" />
-                     <InputGroup label="Anys" value={opt3.years} onChange={(v) => setOpt3({...opt3, years: v})} />
-                  </div>
-                )}
-                <InputGroup label="Consum (L/100km)" value={opt3.consumption} onChange={(v) => setOpt3({...opt3, consumption: v})} step="0.1" />
-                <InputGroup label="Mant. + Assegurança (Anual)" value={opt3.annualMaintenance + opt3.insurance} onChange={(v) => setOpt3({...opt3, annualMaintenance: v, insurance: 0})} suffix="€" />
-
-                <div className="bg-gray-50 p-3 rounded mt-4">
-                  <div className="text-xs text-gray-500">Cost total 10 anys</div>
-                  <div className="text-xl font-bold text-purple-600">{Math.round(scenario3.totalCost10Years).toLocaleString()} €</div>
-                  <div className="text-xs text-gray-400 mt-1">{Math.round(scenario3.monthlyAverage)} € / mes (mitjana)</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SECCIÓ C: INVERSIÓ */}
-        <section>
-          <SectionTitle 
-            title="C. Estratègia d'Inversió" 
-            icon={TrendingUp} 
-            subtitle="Configura el rendiment dels estalvis que no gastis en el cotxe."
-          />
-          <Card className="bg-gradient-to-r from-gray-50 to-white">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <InputGroup 
-                label="% Estalvis a Invertir" 
-                value={investment.percentToInvest} 
-                onChange={(v) => setInvestment({...investment, percentToInvest: Math.min(100, Math.max(0, v))})} 
-                suffix="%" 
-                step="5"
-              />
-              <InputGroup 
-                label="Rendiment Esperat (Anual)" 
-                value={investment.returnRate} 
-                onChange={(v) => setInvestment({...investment, returnRate: v})} 
-                suffix="%" 
-                step="0.1"
-              />
-              <InputGroup 
-                label="Inflació Estimada" 
-                value={investment.inflation} 
-                onChange={(v) => setInvestment({...investment, inflation: v})} 
-                suffix="%" 
-                step="0.1"
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              * El gràfic següent mostra el patrimoni <strong>Nominal</strong> (els diners que veuràs al compte bancari).
-            </p>
-          </Card>
-        </section>
-
-        {/* SECCIÓ D: PROJECCIÓ COMPARATIVA */}
-        <section>
-          <SectionTitle 
-            title="D. Projecció Comparativa a 10 Anys" 
-            icon={TrendingUp} 
-            subtitle="Evolució dels teus estalvis segons l'opció que triïs."
-          />
-          
-          <Card>
-            <div className="h-96 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={projectionData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="year" tick={{fontSize: 12}} />
-                  <YAxis tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
-                  <RechartsTooltip formatter={(val) => `${Math.round(val).toLocaleString()} €`} />
-                  <Legend wrapperStyle={{paddingTop: '20px'}} />
-                  
-                  <Line type="monotone" dataKey="opt1" name={`1. ${opt1.name}`} stroke="#3B82F6" strokeWidth={3} dot={false} />
-                  <Line type="monotone" dataKey="opt2" name={`2. ${opt2.name}`} stroke="#10B981" strokeWidth={3} dot={false} />
-                  <Line type="monotone" dataKey="opt3" name={`3. ${opt3.name}`} stroke="#A855F7" strokeWidth={3} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </section>
-
-        {/* SECCIÓ E: SEMÀFOR COMPARATIU (NOU DISSENY) */}
-        <section>
-          <SectionTitle 
-            title="E. Semàfor de Viabilitat" 
-            icon={AlertTriangle} 
-            subtitle="Anàlisi final i detall de sostenibilitat."
-          />
-          
+        {/* SECTION E: FINAL RESULTS */}
+        <div>
+          <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+             <Target className="text-blue-600" />
+             Conclusions Finals
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             
-             {/* Resultat Opció 1 */}
-             <ResultCard 
+             <ScenarioResult 
                 title={opt1.name}
+                colorTheme="blue"
                 status={getStatusColor(finalState.opt1)}
                 monthlyCashFlow={monthlyCashFlow}
                 carCost={scenario1.monthlyAverage}
                 netMonthly={monthlyCashFlow - scenario1.monthlyAverage}
                 projections={getProjectionsForOption('opt1')}
              />
-
-             {/* Resultat Opció 2 */}
-             <ResultCard 
+             <ScenarioResult 
                 title={opt2.name}
+                colorTheme="emerald"
                 status={getStatusColor(finalState.opt2)}
                 monthlyCashFlow={monthlyCashFlow}
                 carCost={scenario2.monthlyAverage}
                 netMonthly={monthlyCashFlow - scenario2.monthlyAverage}
                 projections={getProjectionsForOption('opt2')}
              />
-
-             {/* Resultat Opció 3 */}
-             <ResultCard 
+             <ScenarioResult 
                 title={opt3.name}
+                colorTheme="purple"
                 status={getStatusColor(finalState.opt3)}
                 monthlyCashFlow={monthlyCashFlow}
                 carCost={scenario3.monthlyAverage}
                 netMonthly={monthlyCashFlow - scenario3.monthlyAverage}
                 projections={getProjectionsForOption('opt3')}
              />
-
           </div>
-          
-          <div className="mt-8 p-4 bg-gray-100 rounded-lg text-sm text-gray-600 flex gap-4">
-             <Info className="w-5 h-5 flex-shrink-0" />
-             <p>
-               <strong>Nota sobre el Cost Real:</strong> El "Cost cotxe" mostrat aquí és la mitjana mensual durant 10 anys, incloent-hi la compra/entrada amortitzada, la gasolina i el manteniment. Això permet comparar millor cotxes barats de compra però cars de manteniment.
-             </p>
-          </div>
-        </section>
+        </div>
 
       </main>
     </div>
