@@ -17,7 +17,12 @@ import {
   Fuel,
   PiggyBank,
   Target,
+  Download // New Icon for PDF
 } from 'lucide-react';
+
+// --- PDF LIBRARIES ---
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // --- UI COMPONENTS ---
 
@@ -385,6 +390,133 @@ export default function DashboardFinancesModern() {
       10: projectionData[10][optionKey]
   });
 
+  // --- PDF GENERATION ---
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+
+    // -- COLORS --
+    const slate900 = [15, 23, 42];
+    const slate500 = [100, 116, 139];
+    const blue600 = [37, 99, 235];
+    
+    // -- HEADER --
+    // Title Background
+    doc.setFillColor(...slate900);
+    doc.rect(0, 0, 210, 30, 'F');
+    
+    // Title Text
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("Informe Viabilitat - El Cotxe del Papa", 14, 18);
+    
+    // Date
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generat el: ${new Date().toLocaleDateString()}`, 14, 25);
+
+    // -- SECTION 1: FINANCIAL BASELINE --
+    let yPos = 40;
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("1. Situació Financera Inicial", 14, yPos);
+    
+    yPos += 10;
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Concepte', 'Valor Actual']],
+      body: [
+        ['Estalvis Inicials', `${basicFinance.savings.toLocaleString()} €`],
+        ['Ingressos Nets (Mensual)', `${basicFinance.pension.toLocaleString()} €`],
+        ['Despeses Fixes (Mensual)', `${basicFinance.expenses.toLocaleString()} €`],
+        ['Marge Disponible (Mensual)', `${monthlyCashFlow.toLocaleString()} €`],
+      ],
+      theme: 'striped',
+      headStyles: { fillColor: slate500 },
+      styles: { fontSize: 10 },
+      margin: { left: 14, right: 14 }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 15;
+
+    // -- SECTION 2: COMPARISON --
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("2. Comparativa d'Escenaris de Cotxe", 14, yPos);
+    
+    yPos += 8;
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Paràmetre', opt1.name, opt2.name, opt3.name]],
+      body: [
+        [
+          'Cost Inicial (Entrada/Pagament)', 
+          `${scenario1.initialOutlay.toLocaleString()} €`, 
+          `${scenario2.initialOutlay.toLocaleString()} €`, 
+          `${scenario3.initialOutlay.toLocaleString()} €`
+        ],
+        [
+          'Cost Mensual Promig (10 anys)', 
+          `${Math.round(scenario1.monthlyAverage)} €`, 
+          `${Math.round(scenario2.monthlyAverage)} €`, 
+          `${Math.round(scenario3.monthlyAverage)} €`
+        ],
+        [
+          'Total Cost a 10 Anys', 
+          `${Math.round(scenario1.totalCost10Years).toLocaleString()} €`, 
+          `${Math.round(scenario2.totalCost10Years).toLocaleString()} €`, 
+          `${Math.round(scenario3.totalCost10Years).toLocaleString()} €`
+        ],
+        [
+           'Balanç Mensual Net (Marge - Cotxe)',
+           `${Math.round(monthlyCashFlow - scenario1.monthlyAverage)} €`,
+           `${Math.round(monthlyCashFlow - scenario2.monthlyAverage)} €`,
+           `${Math.round(monthlyCashFlow - scenario3.monthlyAverage)} €`
+        ]
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: blue600 },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 50 },
+      },
+      styles: { fontSize: 10, cellPadding: 3 },
+      margin: { left: 14, right: 14 }
+    });
+
+    yPos = doc.lastAutoTable.finalY + 15;
+
+    // -- SECTION 3: PROJECTIONS --
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("3. Projecció Patrimonial (Estalvis Futurs)", 14, yPos);
+
+    yPos += 8;
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Any', opt1.name, opt2.name, opt3.name]],
+      body: [
+        ['Any 1', `${projectionData[1].opt1.toLocaleString()} €`, `${projectionData[1].opt2.toLocaleString()} €`, `${projectionData[1].opt3.toLocaleString()} €`],
+        ['Any 5', `${projectionData[5].opt1.toLocaleString()} €`, `${projectionData[5].opt2.toLocaleString()} €`, `${projectionData[5].opt3.toLocaleString()} €`],
+        ['Any 10 (Final)', `${projectionData[10].opt1.toLocaleString()} €`, `${projectionData[10].opt2.toLocaleString()} €`, `${projectionData[10].opt3.toLocaleString()} €`],
+      ],
+      theme: 'striped',
+      headStyles: { fillColor: slate500 },
+      styles: { fontSize: 10, halign: 'center' },
+      columnStyles: { 0: { fontStyle: 'bold', halign: 'left' } },
+      margin: { left: 14, right: 14 }
+    });
+
+    // -- FOOTER NOTES --
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(150);
+    doc.text(`*Nota: Càlculs basats en una inflació del ${investment.inflation}% i un rendiment d'inversió del ${investment.returnRate}%.`, 14, finalY);
+
+    doc.save('informe_viabilitat_cotxe.pdf');
+  };
+
   return (
     <div className="bg-slate-50 min-h-screen font-sans text-slate-600 pb-20 selection:bg-blue-100 selection:text-blue-900">
       
@@ -401,17 +533,29 @@ export default function DashboardFinancesModern() {
              </h1>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4 text-sm text-slate-300 bg-slate-800/60 rounded-2xl p-4 w-full sm:w-auto">
-            <div className="text-left sm:text-right">
-              <div className="font-bold text-white text-lg">{basicFinance.savings.toLocaleString()} €</div>
-              <div>Patrimoni Inicial</div>
-            </div>
-            <div className="h-px w-full sm:h-10 sm:w-px bg-slate-700"></div>
-            <div className="text-left sm:text-right">
-              <div className={`font-bold text-lg ${monthlyCashFlow > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {monthlyCashFlow > 0 ? '+' : ''}{monthlyCashFlow} €
+          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto items-start sm:items-center">
+             {/* PDF BUTTON */}
+             <button 
+               onClick={handleDownloadPDF}
+               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl font-bold transition-all shadow-lg hover:shadow-blue-500/30"
+             >
+                <Download className="w-5 h-5" />
+                <span className="hidden sm:inline">Descarregar Informe</span>
+                <span className="sm:hidden">PDF</span>
+             </button>
+
+            <div className="flex flex-col sm:flex-row gap-4 text-sm text-slate-300 bg-slate-800/60 rounded-2xl p-4 w-full sm:w-auto">
+              <div className="text-left sm:text-right">
+                <div className="font-bold text-white text-lg">{basicFinance.savings.toLocaleString()} €</div>
+                <div>Patrimoni Inicial</div>
               </div>
-              <div>Marge Mensual</div>
+              <div className="h-px w-full sm:h-10 sm:w-px bg-slate-700"></div>
+              <div className="text-left sm:text-right">
+                <div className={`font-bold text-lg ${monthlyCashFlow > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {monthlyCashFlow > 0 ? '+' : ''}{monthlyCashFlow} €
+                </div>
+                <div>Marge Mensual</div>
+              </div>
             </div>
           </div>
         </div>
