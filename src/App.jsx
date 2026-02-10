@@ -252,9 +252,10 @@ export default function DashboardFinancesModern() {
 
   // --- LOGIC HELPER ---
   const calculateLoanPmt = (principal, rate, years) => {
-    if (principal <= 0 || rate <= 0 || years <= 0) return 0;
+    if (principal <= 0 || years <= 0) return 0;
     const r = rate / 100 / 12;
     const n = years * 12;
+    if (r === 0) return principal / n;
     return (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
   };
 
@@ -281,7 +282,8 @@ export default function DashboardFinancesModern() {
 
     const loanTotal = monthlyLoanCost * loanMonths;
     const opsTotal = (annualFuel + annualFixed) * 10;
-    const totalCost10Years = initialOutlay + loanTotal + opsTotal;
+    const totalPurchaseCost = initialOutlay + loanTotal;
+    const totalCost10Years = totalPurchaseCost + opsTotal;
     const monthlyAverage = totalCost10Years / 120;
 
     return {
@@ -290,6 +292,7 @@ export default function DashboardFinancesModern() {
       loanMonths,
       annualFuel,
       annualFixed,
+      totalPurchaseCost,
       totalCost10Years,
       monthlyAverage
     };
@@ -671,7 +674,7 @@ export default function DashboardFinancesModern() {
                   <ModernInput label="Despeses/Any" value={opt2.annualMaintenance + opt2.insurance} onChange={(v) => setOpt2({...opt2, annualMaintenance: v, insurance: 0})} step="50" suffix="€" />
                 </div>
 
-                 <div className="mt-6 pt-4 border-t border-slate-100">
+                <div className="mt-6 pt-4 border-t border-slate-100">
                   <div className="flex justify-between items-center mb-1">
                      <span className="text-xs font-bold text-slate-400 uppercase">Cost real mensual</span>
                      <span className="text-lg font-bold text-emerald-600">{Math.round(scenario2.monthlyAverage)} €</span>
@@ -680,6 +683,12 @@ export default function DashboardFinancesModern() {
                     <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: `${getMonthlyCostWidth(scenario2.monthlyAverage)}%`}}></div>
                   </div>
                 </div>
+                {opt2.isFinanced && (
+                  <div className="mt-4 flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 text-sm">
+                    <span className="text-emerald-800 font-semibold">Preu final finançat</span>
+                    <span className="text-emerald-700 font-bold">{Math.round(scenario2.totalPurchaseCost).toLocaleString()} €</span>
+                  </div>
+                )}
               </div>
             </Card>
 
@@ -713,7 +722,7 @@ export default function DashboardFinancesModern() {
                   <ModernInput label="Despeses/Any" value={opt3.annualMaintenance + opt3.insurance} onChange={(v) => setOpt3({...opt3, annualMaintenance: v, insurance: 0})} step="50" suffix="€" />
                 </div>
 
-                 <div className="mt-6 pt-4 border-t border-slate-100">
+                <div className="mt-6 pt-4 border-t border-slate-100">
                   <div className="flex justify-between items-center mb-1">
                      <span className="text-xs font-bold text-slate-400 uppercase">Cost real mensual</span>
                      <span className="text-lg font-bold text-purple-600">{Math.round(scenario3.monthlyAverage)} €</span>
@@ -722,6 +731,12 @@ export default function DashboardFinancesModern() {
                     <div className="bg-purple-500 h-1.5 rounded-full" style={{width: `${getMonthlyCostWidth(scenario3.monthlyAverage)}%`}}></div>
                   </div>
                 </div>
+                {opt3.isFinanced && (
+                  <div className="mt-4 flex items-center justify-between rounded-xl border border-purple-100 bg-purple-50/70 px-3 py-2 text-sm">
+                    <span className="text-purple-800 font-semibold">Preu final finançat</span>
+                    <span className="text-purple-700 font-bold">{Math.round(scenario3.totalPurchaseCost).toLocaleString()} €</span>
+                  </div>
+                )}
               </div>
             </Card>
 
